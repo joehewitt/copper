@@ -1,0 +1,40 @@
+
+.List {
+    position: relative;
+    -webkit-box-flex: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    font-size: 19px;
+}
+
+@media screen and/*!*/(max-device-width: 640px) {
+
+.List {
+    overflow-y: visible;
+}
+
+}
+
+.ListContainer {
+    -webkit-transform: translate3d(0,0,0);
+}                                                                
+
+.ListItem {
+    display: block;
+    position: relative;
+    padding: 0.5em;
+    border-top: 1px solid #999;
+    background: #fff;
+    -webkit-transform: translate3d(0,0,0);
+}
+
+.ListItem.touched, .ListItem.selected {
+    background: -webkit-gradient(
+        linear,
+        left top,
+        left bottom,
+        color-stop(0, #028AF3),
+        color-stop(1, #005DE6)
+    );
+    color: #fff !important;
+}

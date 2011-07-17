@@ -1,0 +1,103 @@
+
+/* XXXjoe Move these to a central stylesheet for all of copper */
+
+/*
+html {
+  background: #fff;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Helvetica;
+}
+
+a {
+    color: inherit;
+    text-decoration: inherit;
+}
+*/
+
+.hidden {
+    display: none !important;
+}
+
+.invisible {
+    visibility: hidden !important;
+}
+
+/************************************************************************************************/
+
+.Page {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-transform: translate3d(0, 0, 0);
+}
+
+.Page.slidingOut {
+    -webkit-animation-name: pageSlideLeftOut;
+    -webkit-animation-duration: 350ms;
+    -webkit-animation-timing-function: ease;
+}
+
+.Page.slidingIn {
+    -webkit-animation-name: pageSlideLeft;
+    -webkit-animation-duration: 350ms;
+    -webkit-animation-timing-function: ease;
+}
+
+@-webkit-keyframes 'pageSlideLeftOut' {
+    from {
+        -webkit-transform: translate3d(0, 0, 0);
+    }
+    to {
+        -webkit-transform: translate3d(-100%, 0, 0);
+    }
+}
+
+@-webkit-keyframes 'pageSlideLeft' {
+    from {
+        -webkit-transform: translate3d(100%, 0, 0);
+    }
+    to {
+        -webkit-transform: translate3d(0, 0, 0);
+    }
+}
+
+.Page.slidingBackOut {
+    -webkit-animation-name: pageSlideRightOut;
+    -webkit-animation-duration: 350ms;
+    -webkit-animation-timing-function: ease;
+}
+
+.Page.slidingBack {
+    -webkit-animation-name: pageSlideRight;
+    -webkit-animation-duration: 350ms;
+    -webkit-animation-timing-function: ease;
+}
+
+@-webkit-keyframes 'pageSlideRight' {
+    from {
+        -webkit-transform: translate3d(-100%, 0, 0);
+    }
+    to {
+        -webkit-transform: translate3d(0, 0, 0);
+    }
+}
+
+@-webkit-keyframes 'pageSlideRightOut' {
+    from {
+        -webkit-transform: translate3d(0, 0, 0);
+    }
+    to {
+        -webkit-transform: translate3d(100%, 0, 0);
+    }
+}
+
+.Picture {
+    width: 0;
+    height: 0;
+}

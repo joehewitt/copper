@@ -1,0 +1,17 @@
+{
+  "name": "copper",
+  "description": "Copper library",
+  "url": "http://github.com/joehewitt/copper",
+  "keywords": [],
+  "author": "Joe Hewitt <joe@joehewitt.com>",
+  "contributors": [],
+  "dependencies": {
+  },
+  "version": "0.0.1",
+  "main": "./copper",
+  "directories": {},
+  "engines": { "node": ">=0.4.0" },
+  "app.js": {
+      "static": "./static"
+  }
+}
