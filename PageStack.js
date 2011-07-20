@@ -1,7 +1,7 @@
 
 "style copper/Page.css"
 
-var $ = require('ore').query,
+var $ = require('ore'),
     html = require('ore/html'),
     routes = require('ore/routes'),
     StackBar = require('./StackBar').StackBar;
