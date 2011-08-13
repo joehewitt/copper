@@ -9,7 +9,13 @@ exports.Page = html.div('.Page', {}, [],
 {
     ready: function(constructor) {
         $.each(this.routes, $.bind(function(callback, pattern) {
-            routes.add(pattern, function(args, isBack) {
+            if (pattern == 404) {
+                routes.errorHandler = installRoute;
+            } else {
+                routes.add(pattern, installRoute);
+            }
+
+            function installRoute(args, isBack) {
                 var params;
                 if (callback) {
                     params = callback.apply(window, args);
@@ -23,7 +29,7 @@ exports.Page = html.div('.Page', {}, [],
                 } else {
                     routes.push(creator);
                 }
-            });
+            }            
         }, this));
     }
 });
