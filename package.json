@@ -8,6 +8,7 @@
   "contributors": [],
   "dependencies": {
     "fool": "",
+    "ore": "",
     "underscore": ""
   },
   "main": "./copper",
