@@ -21,7 +21,9 @@ exports.PageStack = html.div('.PageStack', [
             this.stack = [page];
             this.query('.container').append(page);
             this.query('.StackBar').pushTitle(page.title);
-            document.title = page.title;
+            if (page.title) {
+                document.title = page.title;
+            }
         } else {
             var oldPage = this.topPage();
             this.stack[this.stack.length] = page;  
@@ -30,7 +32,9 @@ exports.PageStack = html.div('.PageStack', [
             page.addClass('slidingIn');
             this.query('.container').append(page);
             this.query('.StackBar').pushTitle(page.title);
-            document.title = page.title;
+            if (page.title) {
+                document.title = page.title;
+            }
             
             document.addEventListener('webkitAnimationEnd', endTransition, false);
             function endTransition(event) {

@@ -1,8 +1,9 @@
 
 "style copper/Slider.css";
 
-var $ = require('ore').query,
-    html = require('ore/html');
+var _ = require('underscore'),
+    $ = require('ore').query,
+    html = require('ore/html'),;
 
 exports.Slider = html.div('.Slider', [
     html.div('.track'),
@@ -63,7 +64,7 @@ exports.Slider = html.div('.Slider', [
             maxLeft -= thumb.width();
         }
 
-        var onTouchMove = $.bind(function(event) {
+        var onTouchMove = _.bind(function(event) {
             var touch = event.touches[0];
             var left = startLeft + (touch.clientX - startX);
             if (left < 0) {
@@ -78,7 +79,7 @@ exports.Slider = html.div('.Slider', [
             this.updated();
         }, slider);
 
-        var onTouchEnd = $.bind(function(event) {
+        var onTouchEnd = _.bind(function(event) {
             document.removeEventListener('touchmove', onTouchMove, false);
             document.removeEventListener('touchend', onTouchEnd, false);
             slider.dragging = false;

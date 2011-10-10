@@ -2,13 +2,14 @@
 "style copper/Page.css"
 
 var $ = require('ore'),
+    _ = require('underscore'),
     html = require('ore/html'),
     routes = require('ore/routes');
 
 exports.Page = html.div('.Page', {}, [],
 {
     ready: function(constructor) {
-        $.each(this.routes, $.bind(function(callback, pattern) {
+        _.each(this.routes, _.bind(function(callback, pattern) {
             if (pattern == 404) {
                 routes.errorHandler = installRoute;
             } else {

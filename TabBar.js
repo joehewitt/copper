@@ -1,5 +1,6 @@
 
-var $ = require('ore').query,
+var _ = require('underscore'),
+    $ = require('ore').query,
     html = require('ore/html');
 
 exports.TabBar = html.div('.TabBar', [],
@@ -19,9 +20,9 @@ exports.TabBar = html.div('.TabBar', [],
     },
     
     construct: function() {
-        setTimeout($.bind(function() {
+        setTimeout(_.bind(function() {
             if (this.defaultTab) {
-                this.query('.Tab').each($.bind(function(tab) {
+                this.query('.Tab').each(_.bind(function(tab) {
                     if (tab.attr('href') == this.defaultTab) {
                         tab.select();
                     }
