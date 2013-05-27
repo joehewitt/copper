@@ -1,13 +1,20 @@
 
 var _ = require('underscore'),
-    $ = require('ore').query,
+    $ = require('ore'),
     html = require('ore/html');
 
-exports.TabBar = html.div('.TabBar', [],
+exports.TabBar = html.div('.TabBar', {onclick: '$onClick'}, [],
 {
     defaultTab: null,
     selectedTab: null,
     
+    onClick: function(event) {
+        var tab = $(event.target).closest('.Tab');
+        if (tab.length) {
+            this.selectTab(tab);
+        }
+    },
+
     selectTab: function(tab) {
         if (this.selectedTab) {
             this.selectedTab.removeClass('selected');
@@ -17,6 +24,22 @@ exports.TabBar = html.div('.TabBar', [],
             tab.addClass('selected');
             this.tabselected(tab);
         }
+    },
+
+    closeTab: function(tab) {
+        var previous = $(tab).previous();
+        $(tab).remove();
+        if ($(tab).hasClass('selected')) {
+            if (previous.length) {
+                this.selectTab(previous);
+            } else {
+                var first = this.first();
+                if (first.length) {
+                    this.selectTab(this.first());
+                }
+            }
+        }
+        this.tabclosed(tab);
     },
     
     construct: function() {
@@ -42,4 +65,5 @@ exports.TabBar = html.div('.TabBar', [],
     },
     
     tabselected: $.event,
+    tabclosed: $.event,
 });

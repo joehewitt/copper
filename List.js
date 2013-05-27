@@ -1,11 +1,9 @@
 
-"style copper/List.css"
-
-var $ = require('ore').query,
+var $ = require('ore'),
     html = require('ore/html');
 
 exports.List = html.div('.List', {onclick: '$onClick'}, [
-    html.div('.ListContainer.kinetic.vertical', [
+    html.div('.ListContainer.vertical', [
         html.HERE
     ])
 ],
@@ -25,6 +23,6 @@ exports.List = html.div('.List', {onclick: '$onClick'}, [
         item.addClass('selected');
         this.selectitem(item);
     },
-    
+     
     selectitem: $.event
 });

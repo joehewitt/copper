@@ -22,14 +22,14 @@
 .ListItem {
     display: block;
     position: relative;
-    padding: 0.5em;
-    border-top: 1px solid #999;
-    background: #fff;
+    /*padding: 0.5em;*/
+    /*border-top: 1px solid #999;*/
+    /*background: #fff;*/
     -webkit-transform: translate3d(0,0,0);
 }
 
 .ListItem.touched, .ListItem.selected {
-    background: -webkit-gradient(
+/*    background: -webkit-gradient(
         linear,
         left top,
         left bottom,
@@ -37,4 +37,4 @@
         color-stop(1, #005DE6)
     );
     color: #fff !important;
-}
+*/}
