@@ -3,7 +3,7 @@ var _ = require('underscore'),
     $ = require('ore'),
     html = require('ore/html');
 
-exports.Slider = html.div('.Slider', {onmousedown: '$onMouseDownTrack'}, [
+exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     html.div('.track'),
     html.div('.buffer'),
     html.div('.thumb', {onmousedown: '$onMouseDownThumb'})
@@ -45,20 +45,39 @@ exports.Slider = html.div('.Slider', {onmousedown: '$onMouseDownTrack'}, [
         this.update();
     },
 
-    setIncrement: function(increment) {
+    setRange: function(min, max, increment, cb) {
+        this.min = min;
+        this.max = max;
         this.increment = increment;
+        this._updateTicks(cb);
+    },
+    
+    _updateTicks: function(cb) {
         this.query('.tickmark').remove();
 
         var thumb = this.query('.thumb');
 
         var padding = thumb.width()/2;
-        var tickmarkCount = ((this.max+increment) - this.min) / increment;
-        var spacing = (this.width()-padding*2) / (tickmarkCount-1);
-        for (var i = 0; i < tickmarkCount; ++i) {
-            var tickmark = $(document.createElement('div'));
-            tickmark.addClass('tickmark');
-            tickmark.css('left', padding + (i * spacing));
-            this.append(tickmark);
+        var tickmarkCount = ((this.max+this.increment) - this.min) / this.increment;
+        if (this.max - this.min > 0) {
+            var availableWidth = this.contentWidth()-padding*2;
+            var spacing = availableWidth / (tickmarkCount-1);
+
+            var left = padding;
+            for (var i = 0; i < tickmarkCount; ++i) {
+                var tickmark = $(document.createElement('div'));
+                tickmark.addClass('tickmark');
+                tickmark.css('left', left);
+                this.append(tickmark);
+                if (cb) {
+                    var color = cb(i);
+                    if (color) {
+                        tickmark.css('background', color);
+                    }
+                }
+
+                left += spacing;
+            }
         }
     },
 

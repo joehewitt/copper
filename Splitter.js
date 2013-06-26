@@ -3,9 +3,10 @@ var _ = require('underscore'),
     $ = require('ore'),
     html = require('ore/html');
 
-exports.Splitter = html.div('.Splitter', {_delta: 0, onmousedown: '$onMouseDown'}, [
+exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
+    html.div('.splitter-box')
 ], {
-    delta: 0,
+    _delta: 0,
 
     resized: $.event,
 
@@ -15,164 +16,127 @@ exports.Splitter = html.div('.Splitter', {_delta: 0, onmousedown: '$onMouseDown'
         }, this));
     },
 
-    setDelta: function(delta) {
-        if (!this.orientation) this.autoOrient();
-
-        var isHorizontal = this.orientation == 'horizontal';
-        var target = this.target.indexOf('inner-') == 0 ? 'parent' : 'siblings';
-
-        var previous = this.getPreviousBox();
-        var next = this.getNextBox();
-
-        var startDelta = this.delta;
-        var startPos, startPrevSize, startNextSize, startNextPos;
-        if (isHorizontal) {
-            startPos = this.position().top;
-
-            if (target == 'parent') {
-                startNextSize = next.height();
-                startNextPos = next.position().top;            
-            } else {
-                startPrevSize = previous.height();
-                startNextSize = next.height();
-                startNextPos = next.position().top;            
-            }
-        } else {
-            startPos = this.position().left;
-            if (target == 'parent') {
-                startNextSize = next.width();
-                startNextPos = next.position().left;
-            } else {
-                startPrevSize = previous.width();
-                startNextSize = next.width();
-                startNextPos = next.position().left;
-            }
-        }
-
-        var splitterPos = startPos + delta;
-        var prevSize = startPrevSize + delta;
-        var nextSize = startNextSize - delta;
-        var nextPos = startNextPos + delta;
-
-        if (isHorizontal) {
-            this.css('top', splitterPos);
-            if (target == 'parent') {
-                next.css('height', nextSize);
-                next.css('top', nextPos);
-            } else {
-                previous.css('height', prevSize);
-                next.css('height', nextSize);
-                next.css('top', nextPos);
-            }
-        } else {
-            this.css('left', splitterPos);
-            if (target == 'parent') {
-                next.css('width', nextSize);
-                next.css('left', nextPos);
-            } else {
-                previous.css('width', prevSize);
-                next.css('width', nextSize);
-                next.css('left', nextPos);
-            }
-        }
-
-        this.delta = startDelta + delta;
-    },
-
     getPreviousBox: function() {
         if (this.target == 'inner-top') {
             return null;
+        } else if (this.target == 'panels') {
+            var prev = this.previous()
+            while (prev.length && !(prev.hasClass('panel') && prev.width())) {
+                prev = prev.previous();
+            }
+            return prev;
         } else {
-            return this.previous();
+            var prev = this.previous()
+            while (prev && !prev.width()) {
+                prev = prev.previous();
+            }
+            return prev;
         }
     },
 
     getNextBox: function() {
         if (this.target == 'inner-top') {
             return this.parent();
+        } else if (this.target == 'panels') {
+            var next = this.next()
+            while (next.length && !(next.hasClass('panel') && next.width())) {
+                next = next.next();
+            }
+            return next;
         } else {
-            return this.next();
+            var next = this.next()
+            while (next && !next.width()) {
+                next = next.next();
+            }
+            return next;
         }
     },
 
-    detectOrientation: function(previous, next) {
-        if (this.target == 'inner-top') {
-            return 'horizontal';
-        } else if (previous && previous.length && next && next.length) {
-            var dy = Math.abs(previous.position().top - next.position().top);
-            var dx = Math.abs(previous.position().left - next.position().left);
-            if (dy > dx) {
-                return 'horizontal';
+    get orientation() {
+        if (!this._orientation) {
+            if (this.target == 'inner-top') {
+                this._orientation = 'vertical';
+            } else if (this.target == 'flexible-siblings' || this.target == 'panels') {
+                this._orientation = this.parent().style('-webkit-box-orient');
             } else {
-                return 'vertical';
+                this._orientation = 'horizontal';
             }
         }
+        return this._orientation;
     },
 
     autoOrient: function() {
-        if (this.orientation) return;
+        if (this._oriented) return;
 
+        this.addClass(this.orientation);
+        
         var previous = this.getPreviousBox();
         var next = this.getNextBox();
-        var orient = this.detectOrientation(previous, next);
-        this.orientation = orient;
 
-        if (this.orientation == 'vertical') {
-            this.addClass('vertical');
-        } else if (this.orientation == 'horizontal') {
-            this.addClass('horizontal');
-        }
-        this.layout();
-    },
-
-    layout: function() {
-        if (this.target == 'inner-top') {
-            var inner = this.parent();
-
-            this.css('top', -this.height()/2);
-            this.css('left', 0);
-            this.css('width', inner.width());
-        } else if (this.orientation == 'vertical') {
-            var previous = this.getPreviousBox();
-            var next = this.getNextBox();
-            if (previous && previous.length) {
-                this.css('left', previous.position().left + previous.width() - this.width()/2);
-                this.css('top', previous.position().top);
-                this.css('height', previous.height());
-             } else if (next && next.length) {
-                this.css('left', next.position().left - this.width()/2);
-                this.css('top', next.position().top);
-                this.css('height', next.height());
-             }
-        } else if (this.orientation == 'horizontal') {
-            var previous = this.getPreviousBox();
-            var next = this.getNextBox();
-            if (previous && previous.length) {
-                this.css('top', previous.position().top + previous.height() - this.height()/2);
-                this.css('left', previous.position().left);
-                this.css('width', previous.width());
-            } else if (next && next.length) {
-                this.css('top', next.position().top - this.height()/2);
-                this.css('left', next.position().left);
-                this.css('width', next.width());                
+        if (this.target != 'flexible-siblings' && this.target != 'panels') {
+            if (this.orientation == 'vertical') {
+                // Convert bottom into top+height
+                if (previous) {
+                    // previous.css('top', previous.position().top);
+                    previous.css('height', previous.height());
+                    // previous.css('bottom', 'auto');
+                }
+                if (next) {
+                    // next.css('top', next.position().top);
+                    next.css('height', next.height());
+                    // next.css('bottom', 'auto');
+                }
+            } else if (this.orientation == 'horizontal') {
+                // Convert right into left+width
+                if (previous) {
+                    previous.css('left', previous.position().left);
+                    previous.css('width', previous.width());
+                    previous.css('right', 'auto');
+                }
+                if (next) {
+                    next.css('left', next.position().left);
+                    next.css('width', next.width());
+                    next.css('right', 'auto');
+                }
             }
         }
+
+        this._oriented = true;
     },
 
     onMouseDown: function(event) {
         event.preventDefault();
 
-        this.dragging = true;
+        var previous = this.getPreviousBox();
+        var next = this.getNextBox();
+        if (!((previous && previous.length) || (next && next.length))) return;
 
         var isHorizontal = this.orientation == 'horizontal';
         var target = this.target.indexOf('inner-') == 0 ? 'parent' : 'siblings';
 
-        var previous = this.getPreviousBox();
-        var next = this.getNextBox();
+        this.dragging = true;
+        if (previous) {
+            previous.dragging = true;
+        }
+        if (next) {
+            next.dragging = true;
+        }
+
+        var startMouse = isHorizontal ? event.clientX : event.clientY;
 
         var startDelta = this.delta;
         var startPos, startPrevSize, startNextSize, startNextPos;
         if (isHorizontal) {
+            startPos = this.position().left;
+            if (target == 'parent') {
+                startNextSize = next.width();
+                startNextPos = next.position().left;
+            } else {
+                startPrevSize = previous.width();
+                startNextSize = next.width();
+                startNextPos = next.position().left;
+            }
+        } else {
             startPos = this.position().top;
 
             if (target == 'parent') {
@@ -183,79 +147,121 @@ exports.Splitter = html.div('.Splitter', {_delta: 0, onmousedown: '$onMouseDown'
                 startNextSize = next.height();
                 startNextPos = next.position().top;            
             }
-        } else {
-            startPos = this.position().left;
-            if (target == 'parent') {
-                startNextSize = next.width();
-                startNextPos = next.position().left;
-            } else {
-                startPrevSize = previous.width();
-                startNextSize = next.width();
-                startNextPos = next.position().left;
-            }
         }
-
-        var startMouse = isHorizontal ? event.clientY : event.clientX;
 
         // XXXjoe Calculate me!
         var minPos = 0;
         var maxPos = 1000000;
 
-        var onMouseMove = _.bind(function(event) {
-            var mousePos = isHorizontal ? event.clientY : event.clientX;
-            var delta = mousePos - startMouse;
+        if (this.target == 'flexible-siblings' || this.target == 'panels') {
+            var startPrevFlex = parseFloat(previous.style('-webkit-box-flex'));
+            var startNextFlex = parseFloat(next.style('-webkit-box-flex'));
+            var prevFlex, nextFlex;
 
-            var splitterPos = startPos + delta;
-            var prevSize = startPrevSize + delta;
-            var nextSize = startNextSize - delta;
-            var nextPos = startNextPos + delta;
+            var onMouseMove = _.bind(function(event) {
+                var mousePos = isHorizontal ? event.clientX : event.clientY;
+                var delta = mousePos - startMouse;
 
-            var deltaChange = 0;
-            // if (splitterPos < minPos) {
-            //     deltaChange = minPos - splitterPos;
-            //     splitterPos = minPos;
-            // } else if (splitterPos > maxPos) {
-            //     deltaChange = maxPos - splitterPos;
-            //     splitterPos = maxPos;
-            // }
-            delta -= deltaChange;
-            nextSize -= deltaChange;
-            prevSize -= deltaChange;
+                var splitterPos = startPos + delta;
+                var prevSize = startPrevSize + delta;
+                var nextSize = startNextSize - delta;
+                var nextPos = startNextPos + delta;
 
-            if (isHorizontal) {
-                this.css('top', splitterPos);
-                if (target == 'parent') {
-                    next.css('height', nextSize);
-                    next.css('top', nextPos);
-                } else {
-                    previous.css('height', prevSize);
-                    next.css('height', nextSize);
-                    next.css('top', nextPos);
+                var deltaChange = 0;
+                if (splitterPos < minPos) {
+                    deltaChange = minPos - splitterPos;
+                    splitterPos = minPos;
+                } else if (splitterPos > maxPos) {
+                    deltaChange = maxPos - splitterPos;
+                    splitterPos = maxPos;
                 }
-            } else {
-                this.css('left', splitterPos);
-                if (target == 'parent') {
-                    next.css('width', nextSize);
-                    next.css('left', nextPos);
+                delta -= deltaChange;
+                nextSize -= deltaChange;
+                prevSize -= deltaChange; 
+
+                prevFlex = (prevSize/startPrevSize) * startPrevFlex;
+                nextFlex = (nextSize/startNextSize) * startNextFlex;
+                previous.css('-webkit-box-flex', prevFlex);
+                next.css('-webkit-box-flex', nextFlex);
+
+                this.resized({target: this, delta: this.delta});
+            }, this);
+
+            var onMouseEnd = _.bind(function(event) {
+                $(window).unlisten('mousemove', onMouseMove);
+                $(window).unlisten('mouseup', onMouseEnd);
+                next.size = nextFlex;
+                previous.size = prevFlex;
+                this.dragging = previous.dragging = next.dragging = false;
+            }, this);
+
+            $(window).listen('mousemove', onMouseMove);
+            $(window).listen('mouseup', onMouseEnd);
+        } else {
+            var prevSize, nextSize, splitterPos;
+
+            var onMouseMove = _.bind(function(event) {
+                var mousePos = isHorizontal ? event.clientX : event.clientY;
+                var delta = mousePos - startMouse;
+
+                splitterPos = startPos + delta;
+                nextPos = startNextPos + delta;
+                prevSize = startPrevSize + delta;
+                nextSize = startNextSize - delta;
+
+                // var deltaChange = 0;
+                // if (splitterPos < minPos) {
+                //     deltaChange = minPos - splitterPos;
+                //     splitterPos = minPos;
+                // } else if (splitterPos > maxPos) {
+                //     deltaChange = maxPos - splitterPos;
+                //     splitterPos = maxPos;
+                // }
+                // delta -= deltaChange;
+                // nextSize -= deltaChange;
+                // prevSize -= deltaChange;
+
+                if (isHorizontal) {
+                    this.css('left', splitterPos);
+                    if (target == 'parent') {
+                        next.css('width', nextSize);
+                        next.css('left', nextPos);
+                    } else {
+                        previous.css('width', prevSize);
+                        next.css('width', nextSize);
+                        next.css('left', nextPos);
+                    }
                 } else {
-                    previous.css('width', prevSize);
-                    next.css('width', nextSize);
-                    next.css('left', nextPos);
+                    // this.css('top', splitterPos);
+                    if (target == 'parent') {
+                        next.css('height', nextSize);
+                        // next.css('top', nextPos);
+                    } else {
+                        previous.css('height', prevSize);
+                        next.css('height', nextSize);
+                        next.css('top', nextPos);
+                    }
                 }
-            }
 
-            this.delta = startDelta + delta;
-            this.resized({target: this, delta: this.delta});
-        }, this);
+                this.resized({target: this, delta: this.delta});
+            }, this);
 
-        var onMouseEnd = _.bind(function(event) {
-            $(window).unlisten('mousemove', onMouseMove);
-            $(window).unlisten('mouseup', onMouseEnd);
-            this.dragging = false;
-        }, this);
+            var onMouseEnd = _.bind(function(event) {
+                $(window).unlisten('mousemove', onMouseMove);
+                $(window).unlisten('mouseup', onMouseEnd);
+                if (next) {
+                    next.size = nextSize;
+                    next.dragging = true;
+                }
+                if (previous) {
+                    previous.size = prevSize;
+                    previous.dragging = true;
+                }
+                this.dragging = true;
+            }, this);
 
-        $(window).listen('mousemove', onMouseMove);
-        $(window).listen('mouseup', onMouseEnd);
-
+            $(window).listen('mousemove', onMouseMove);
+            $(window).listen('mouseup', onMouseEnd);
+        }
     }
 });    

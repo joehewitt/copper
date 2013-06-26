@@ -6,7 +6,7 @@ var $ = require('ore'),
     html = require('ore/html'),
     routes = require('ore/routes');
 
-exports.Page = html.div('.Page', {}, [],
+exports.Page = html.div('.Page', {onclick: '$onClick'}, [],
 {
     ready: function(constructor) {
         _.each(this.routes, _.bind(function(callback, pattern) {
@@ -32,5 +32,26 @@ exports.Page = html.div('.Page', {}, [],
                 }
             }            
         }, this));
+    },
+
+    onClick: function(event) {
+        var button = $(event.target).closest('.button');
+        if (button.length) {
+            if (button.hasClass('checkbox')) {
+                button.toggle();
+            } else {
+                var group = button.closest('.button-group');
+                if (group.length) {
+                    group.value = button.value;
+                } else {
+                    if (button.command) {
+                        button.command(event);
+                    }
+                    if (button.attr('menu')) {
+                        button.showMenu();
+                    }
+                }
+            }
+        }
     }
 });
