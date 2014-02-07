@@ -27,7 +27,6 @@ exports.List = html.div('.List', {onmousedown: '$onMouseDown'}, [
     },
     
     selectItem: function(item, others) {
-        D&&D('select item', item);
         if (this.selectedItems) {
             this.selectedItems.removeClass('selected');
         }
