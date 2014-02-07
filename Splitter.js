@@ -55,11 +55,11 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
     get orientation() {
         if (!this._orientation) {
             if (this.target == 'inner-top') {
-                this._orientation = 'vertical';
+                this._orientation = 'column';
             } else if (this.target == 'flexible-siblings' || this.target == 'panels') {
-                this._orientation = this.parent().style('-webkit-box-orient');
+                this._orientation = this.parent().style('-webkit-flex-direction');
             } else {
-                this._orientation = 'horizontal';
+                this._orientation = 'row';
             }
         }
         return this._orientation;
@@ -74,7 +74,7 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
         var next = this.getNextBox();
 
         if (this.target != 'flexible-siblings' && this.target != 'panels') {
-            if (this.orientation == 'vertical') {
+            if (this.orientation == 'column') {
                 // Convert bottom into top+height
                 if (previous) {
                     // previous.css('top', previous.position().top);
@@ -86,7 +86,7 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
                     next.css('height', next.height());
                     // next.css('bottom', 'auto');
                 }
-            } else if (this.orientation == 'horizontal') {
+            } else if (this.orientation == 'row') {
                 // Convert right into left+width
                 if (previous) {
                     previous.css('left', previous.position().left);
@@ -111,7 +111,7 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
         var next = this.getNextBox();
         if (!((previous && previous.length) || (next && next.length))) return;
 
-        var isHorizontal = this.orientation == 'horizontal';
+        var isHorizontal = this.orientation == 'row';
         var target = this.target.indexOf('inner-') == 0 ? 'parent' : 'siblings';
 
         this.dragging = true;
@@ -154,8 +154,8 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
         var maxPos = 1000000;
 
         if (this.target == 'flexible-siblings' || this.target == 'panels') {
-            var startPrevFlex = parseFloat(previous.style('-webkit-box-flex'));
-            var startNextFlex = parseFloat(next.style('-webkit-box-flex'));
+            var startPrevFlex = parseFloat(previous.style('-webkit-flex'));
+            var startNextFlex = parseFloat(next.style('-webkit-flex'));
             var prevFlex, nextFlex;
 
             var onMouseMove = _.bind(function(event) {
@@ -181,8 +181,8 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
 
                 prevFlex = (prevSize/startPrevSize) * startPrevFlex;
                 nextFlex = (nextSize/startNextSize) * startNextFlex;
-                previous.css('-webkit-box-flex', prevFlex);
-                next.css('-webkit-box-flex', nextFlex);
+                previous.css('-webkit-flex', prevFlex);
+                next.css('-webkit-flex', nextFlex);
 
                 this.resized({target: this, delta: this.delta});
             }, this);

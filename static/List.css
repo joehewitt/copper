@@ -1,7 +1,7 @@
 
 .List {
     position: relative;
-    -webkit-box-flex: 1;
+    -webkit-flex: 1;
     overflow-x: hidden;
     overflow-y: auto;
     font-size: 19px;

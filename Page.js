@@ -6,7 +6,7 @@ var $ = require('ore'),
     html = require('ore/html'),
     routes = require('ore/routes');
 
-exports.Page = html.div('.Page', {onclick: '$onClick'}, [],
+exports.Page = html.div('.Page', {onmousedown: '$onMouseDown', onclick: '$onClick'}, [],
 {
     ready: function(constructor) {
         _.each(this.routes, _.bind(function(callback, pattern) {
@@ -34,6 +34,17 @@ exports.Page = html.div('.Page', {onclick: '$onClick'}, [],
         }, this));
     },
 
+    onMouseDown: function(event) {
+        var button = $(event.target).closest('.button');
+        if (button.length) {
+            if (button.attr('menu')) {
+                button.showMenu();
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }
+    },
+
     onClick: function(event) {
         var button = $(event.target).closest('.button');
         if (button.length) {
@@ -46,9 +57,6 @@ exports.Page = html.div('.Page', {onclick: '$onClick'}, [],
                 } else {
                     if (button.command) {
                         button.command(event);
-                    }
-                    if (button.attr('menu')) {
-                        button.showMenu();
                     }
                 }
             }

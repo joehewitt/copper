@@ -43,3 +43,27 @@ exports.Button = html.div('.button', {}, [
         }
     }
 });    
+
+// *************************************************************************************************
+
+exports.Checkbox = html.input('.Checkbox', {type: 'checkbox'}, [
+], {
+    value: null,
+
+    get checked() {
+        return this.prop('checked');
+    },
+
+    set checked(checked) {
+        if (checked) {
+            this.prop('checked', true);
+        } else {
+            this.prop('checked', false);
+        }
+        return checked;
+    },
+
+    toggle: function() {
+        this.checked = !this.checked;
+    }
+});    

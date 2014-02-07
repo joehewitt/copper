@@ -16,41 +16,65 @@ exports.Menu = html.div('.menu', {}, [
     },
 
     show: function(anchorBox) {
-        this.showing({target: this});
+        if (!this.onMouseDown) {
+            this.showing({target: this});
+        }
 
         var offset = anchorBox.offset();
         var parentOffset = this.parent().offset();
+        
         var anchorX = offset.left - parentOffset.left;
+        var width = this.width();
+        var right = offset.left + width;
+        if (right > window.innerWidth) {
+            anchorX = (offset.left - parentOffset.left) - width;
+        }
+
         var anchorY = (offset.top - parentOffset.top) + offset.height;
+        var height = this.height();
+        var bottom = offset.top + height;
+        if (bottom > window.innerHeight) {
+            anchorY = (offset.top - parentOffset.top) - height;
+        }
+
         this.css('left', anchorX);
-        this.css('top', anchorY);1
+        this.css('top', anchorY);
 
-        this.onClick = _.bind(function(event) {
-            var target = $(event.target);
-            var item = target.closest('.menu-item');
-            if (item.length) {
-                item.command({target: item});
-                this.hide();
-                event.stopPropagation();
-                event.preventDefault();
-            } else if (!target.contains(this)) {
-                this.hide();
-                event.stopPropagation();
-                event.preventDefault();
-            }
-        }, this);
-        window.addEventListener('click', this.onClick, true);
+        if (!this.onMouseDown) {
+            this.onClick = _.bind(function(event) {
+                var target = $(event.target);
+                var item = target.closest('.menu-item');
+                if (item.length && item.command) {
+                    item.command({target: item});
+                    this.hide();
+                    // event.stopPropagation();
+                    event.preventDefault();
+                }
+            }, this);
+            this.onMouseDown = _.bind(function(event) {
+                var target = $(event.target);
+                var item = target.closest('.menu-item');
+                if (!item.length && !target.contains(this)) {
+                    this.hide();
+                    event.stopPropagation();
+                    event.preventDefault();
+                }
+            }, this);
+            window.addEventListener('mousedown', this.onMouseDown, true);
+            window.addEventListener('click', this.onClick, true);
 
-        this.addClass('visible');
-        this.shown({target: this});
+            this.addClass('visible');
+            this.shown({target: this});
+        }
     },
 
     hide: function() {
         this.removeClass('visible');
         this.hidden({target: this});
 
+        window.removeEventListener('mousedown', this.onMouseDown, true);
         window.removeEventListener('click', this.onClick, true);
-        delete this.onClick;
+        delete this.onMouseDown;
     },
 });    
 
