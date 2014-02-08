@@ -10,6 +10,7 @@ exports.Menu = html.div('.menu', {}, [
     showing: $.event,
     shown: $.event,
     hidden: $.event,
+    command: $.event,
 
     get visible() {
         return this.hasClass('visible');
@@ -44,9 +45,17 @@ exports.Menu = html.div('.menu', {}, [
             this.onClick = _.bind(function(event) {
                 var target = $(event.target);
                 var item = target.closest('.menu-item');
-                if (item.length && item.command) {
-                    item.command({target: item});
-                    this.hide();
+                if (item.length) {
+                    var evt = {target: item};
+                    if (item.command) {
+                        item.command(evt);
+                    }
+                    if (!evt.prevent) {
+                        this.command(evt);
+                    }
+                    if (!evt.prevent) {
+                        this.hide();
+                    }
                     // event.stopPropagation();
                     event.preventDefault();
                 }
@@ -56,9 +65,9 @@ exports.Menu = html.div('.menu', {}, [
                 var item = target.closest('.menu-item');
                 if (!item.length && !target.contains(this)) {
                     this.hide();
-                    event.stopPropagation();
-                    event.preventDefault();
                 }
+                // event.stopPropagation();
+                event.preventDefault();
             }, this);
             window.addEventListener('mousedown', this.onMouseDown, true);
             window.addEventListener('click', this.onClick, true);
