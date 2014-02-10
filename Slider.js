@@ -86,7 +86,8 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         buffer.css('width', this.buffer * this.width());
         if (!this.dragging) {
             var thumb = $('.thumb', this);
-            var value = this.value / (this.max - this.min);
+            var range = this.max - this.min;
+            var value = range > 0 ? this.value / range : 0;
             thumb.css('left', value * (this.width() - thumb.width()));
         }
     },
@@ -99,7 +100,8 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         var offsetX = event.clientX - this.offset().left;
         var maxLeft = this.width();
         var ratio = offsetX / this.contentWidth();
-        var value = this.min + ((this.max - this.min) * ratio);
+        var range = this.max - this.min;
+        var value = this.min + (range * ratio);
 
         if (this.increment) {
             var remainder = value % this.increment;
@@ -140,7 +142,8 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
             }
 
             // thumb.css('left', left);
-            var value = this.min + ((left/maxLeft) * (this.max - this.min));
+            var range = this.max - this.min;
+            var value = this.min + ((left/maxLeft) * range);
 
             if (this.increment) {
                 var remainder = value % this.increment;
@@ -151,7 +154,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
                 }
             }
 
-            var pos = value / (this.max - this.min);
+            var pos = range > 0 ? value / range : 0;
             thumb.css('left', pos * (this.width() - thumb.width()));
 
             this.value = value;
