@@ -27,14 +27,14 @@ exports.Menu = html.div('.menu', {}, [
         var anchorX = offset.left - parentOffset.left;
         var width = this.width();
         var right = offset.left + width;
-        if (right > window.innerWidth) {
+        if (right > window.innerWidth && width < window.innerWidth-offset.left) {
             anchorX = (offset.left - parentOffset.left) - width;
         }
 
         var anchorY = (offset.top - parentOffset.top) + offset.height;
         var height = this.height();
         var bottom = offset.top + height;
-        if (bottom > window.innerHeight) {
+        if (bottom > window.innerHeight && height < window.innerHeight) {
             anchorY = (offset.top - parentOffset.top) - height;
         }
 

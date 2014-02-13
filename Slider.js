@@ -14,6 +14,8 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     buffer: 0,
 
     updated: $.event,
+    begandragging: $.event,
+    endeddragging: $.event,
 
     construct: function() {
         setTimeout(_.bind(function() {
@@ -123,6 +125,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         var thumb = $('.thumb', this);
 
         this.dragging = true;
+        this.begandragging({target: this, value: this.value});
 
         var touch = event;//.touches[0];
         var startLeft = thumb.position().left;
@@ -165,6 +168,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
             document.removeEventListener('mousemove', onMouseMove, false);
             document.removeEventListener('mouseup', onMouseEnd, false);
             this.dragging = false;
+            this.endeddragging({target: this, value: this.value});
         }, this);
 
         document.addEventListener('mousemove', onMouseMove, false);
