@@ -4,9 +4,10 @@
 var $ = require('ore'),
     _ = require('underscore'),
     html = require('ore/html'),
-    routes = require('ore/routes');
+    routes = require('ore/routes'),
+    Container = require('./Container').Container;
 
-exports.Page = html.div('.Page', {onmousedown: '$onMouseDown', onclick: '$onClick'}, [],
+exports.Page = Container('.Page', {}, [],
 {
     ready: function(constructor) {
         _.each(this.routes, _.bind(function(callback, pattern) {
@@ -32,34 +33,5 @@ exports.Page = html.div('.Page', {onmousedown: '$onMouseDown', onclick: '$onClic
                 }
             }            
         }, this));
-    },
-
-    onMouseDown: function(event) {
-        var button = $(event.target).closest('.button');
-        if (button.length) {
-            if (button.attr('menu')) {
-                button.showMenu();
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        }
-    },
-
-    onClick: function(event) {
-        var button = $(event.target).closest('.button');
-        if (button.length) {
-            if (button.hasClass('checkbox')) {
-                button.toggle();
-            } else {
-                var group = button.closest('.button-group');
-                if (group.length) {
-                    group.value = button.value;
-                } else {
-                    if (button.command) {
-                        button.command(event);
-                    }
-                }
-            }
-        }
     }
 });

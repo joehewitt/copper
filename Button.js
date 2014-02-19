@@ -29,7 +29,12 @@ exports.Button = html.div('.button', {}, [
     showMenu: function(menu) {
         var menuSelector = this.attr('menu');
         if (menuSelector) {
-            var menu = $(menuSelector);
+            var container = this.closest('.Container');
+            if (!container.length) {
+                container = $(document);
+            }
+
+            var menu = container.query(menuSelector);
             if (menu.length) {
                 var onHidden = _.bind(function () {
                     this.removeClass('depressed');

@@ -96,6 +96,10 @@ exports.MenuItem = html.div('.menu-item', {}, [
 
 // *************************************************************************************************
 
+exports.MenuSeparator = html.div('.menu-separator', {}, [], {});
+
+// *************************************************************************************************
+
 exports.MenuSliderItem = html.div('.menu-slider-item', {}, [
     html.div('.menu-item-title'),
     Slider('.menu-item-slider', {_increment: 1, onupdated: '$onSliderUpdated'}),
