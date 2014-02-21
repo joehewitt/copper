@@ -1,6 +1,4 @@
 
-"style copper/Page.css"
-
 var $ = require('ore'),
     _ = require('underscore'),
     html = require('ore/html'),
