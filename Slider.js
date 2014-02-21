@@ -3,7 +3,7 @@ var _ = require('underscore'),
     $ = require('ore'),
     html = require('ore/html');
 
-exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
+exports.Slider = html.div('.slider', {tabindex: '0', onmousedown: '$onMouseDownTrack'}, [
     html.div('.track'),
     html.div('.buffer'),
     html.div('.thumb', {onmousedown: '$onMouseDownThumb'})
@@ -121,6 +121,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
 
     onMouseDownThumb: function(event) {
         event.preventDefault();
+        this.val().focus();
 
         var thumb = $('.thumb', this);
 

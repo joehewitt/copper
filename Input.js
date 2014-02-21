@@ -60,7 +60,6 @@ exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
         var startValue = this.value;
         var increment = this.increment / this.pixelsPerIncrement;
 
-        this.val().blur();
         event.preventDefault();
 
         this.onMouseMove = _.bind(function(event) {
