@@ -90,8 +90,28 @@ exports.Menu = html.div('.menu', {}, [
 // *************************************************************************************************
 
 exports.MenuItem = html.div('.menu-item', {}, [
+    html.div('.menu-item-title', [html.HERE]),
+    html.div('.menu-item-key', []),
 ], {
     command: $.event,
+
+    get keyboardShortcut() {
+        return this.query('.menu-item-title').text();
+    },
+
+    set keyboardShortcut(value) {
+        this.query('.menu-item-key').html(value);
+        return value;
+    },
+
+    get title() {
+        return this.query('.menu-item-title').text();
+    },
+
+    set title(value) {
+        this.query('.menu-item-title').html(value);
+        return value;
+    },
 });    
 
 // *************************************************************************************************
