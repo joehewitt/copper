@@ -136,7 +136,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     // *********************************************************************************************
 
     onMouseDownTrack: function(event) {
-        if ($(event.target).hasClass('thumb')) return;
+        if ($(event.target).cssClass('thumb')) return;
 
         this.val().focus();
         event.preventDefault();

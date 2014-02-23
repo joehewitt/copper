@@ -10,7 +10,7 @@ exports.Button = html.div('.button', {}, [
     value: null,
 
     get selected() {
-        return this.hasClass('selected');
+        return this.cssClass('selected');
     },
 
     set selected(selected) {

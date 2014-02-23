@@ -29,7 +29,7 @@ exports.TabBar = html.div('.TabBar', {onclick: '$onClick'}, [],
     closeTab: function(tab) {
         var previous = $(tab).previous();
         $(tab).remove();
-        if ($(tab).hasClass('selected')) {
+        if ($(tab).cssClass('selected')) {
             if (previous.length) {
                 this.selectTab(previous);
             } else {

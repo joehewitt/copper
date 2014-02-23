@@ -21,7 +21,7 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
             return null;
         } else if (this.target == 'panels') {
             var prev = this.previous()
-            while (prev.length && !(prev.hasClass('panel') && prev.width())) {
+            while (prev.length && !(prev.cssClass('panel') && prev.width())) {
                 prev = prev.previous();
             }
             return prev;
@@ -39,7 +39,7 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
             return this.parent();
         } else if (this.target == 'panels') {
             var next = this.next()
-            while (next.length && !(next.hasClass('panel') && next.width())) {
+            while (next.length && !(next.cssClass('panel') && next.width())) {
                 next = next.next();
             }
             return next;

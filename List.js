@@ -21,7 +21,7 @@ exports.List = html.div('.List', {onmousedown: '$onMouseDown'}, [
         } else if (event.shiftKey && !event.metaKey && !event.altKey && !event.ctrlKey) {
             this.toggleItemRange(item);
             event.preventDefault();
-        } else if (!item.hasClass('selected')) {
+        } else if (!item.cssClass('selected')) {
             this.selectItem(item);
         }
     },
@@ -41,7 +41,7 @@ exports.List = html.div('.List', {onmousedown: '$onMouseDown'}, [
     },
 
     toggleItem: function(item, shouldNotUnselect) {
-        if (item.hasClass('selected')) {
+        if (item.cssClass('selected')) {
             if (!shouldNotUnselect) {
                 this.selectedItems = this.selectedItems.without(item);
                 item.removeClass('selected');

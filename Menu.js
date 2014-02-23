@@ -19,7 +19,7 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
     selected: $.event,
 
     get visible() {
-        return this.hasClass('visible');
+        return this.cssClass('visible');
     },
 
     get keyMap() {
@@ -62,7 +62,7 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
         var selected = this.query('.menu-item.selected');
         if (selected.length) {
             for (var prev = selected.previous(); prev.length; prev = prev.previous()) {
-                if (prev.hasClass('menu-item')) {
+                if (prev.cssClass('menu-item')) {
                     this.select(prev);
                     break;
                 }
@@ -76,7 +76,7 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
         var selected = this.query('.menu-item.selected');
         if (selected.length) {
             for (var next = selected.next(); next.length; next = next.next()) {
-                if (next.hasClass('menu-item')) {
+                if (next.cssClass('menu-item')) {
                     this.select(next);
                     break;
                 }
@@ -101,9 +101,11 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
     },
 
     enterItem: function(item, shouldNotHide) {
-        var evt = {target: item};
-        if (item.command) {
-            item.command.command(evt);
+        var command = item.cmd();
+
+        var evt = {target: item, command: command};
+        if (command) {
+            command.command(evt);
         }
         if (item.commanded) {
             item.commanded(evt);
@@ -124,16 +126,16 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
         for (var parent = this; parent.length; parent = parent.parent()) {
             if (parent.keyManager) {
                 var keyManager = parent.keyManager;
-                this.query('.menu-item').each(function(item) {
-                    var commandId = item.command ? item.command.id : null;
-                    if (commandId) {
-                        var shortcut = keyManager.findShortcut(commandId);
+                this.query('.menu-item').each(_.bind(function(item) {
+                    var command = item.cmd();
+                    if (command) {
+                        var shortcut = keyManager.findShortcut(command.id);
                         if (shortcut) {
                             item.keyboardShortcut = shortcut;
                         }
                     }
 
-                })
+                }, this));
                 break;                
             }
         }

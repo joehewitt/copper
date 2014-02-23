@@ -6,7 +6,6 @@ var _ = require('underscore');
 function Command(properties) {
     this._title = properties.title;
     this._className = properties.className;
-    this._validate = properties.validate;
     this._command = properties.command;
     this._children = properties.children;
     this._actions = properties.actions;
@@ -18,6 +17,14 @@ function Command(properties) {
     this.hasHover = properties.hover || false;
     this.isPrompt = properties.isPrompt || false;
     this.self = properties.self || this;
+
+    if (typeof(properties.validate) == 'string') {
+        this.conditionId = properties.validate;
+        this._validate = _.bind(this.self[properties.validate], this.self);
+    } else {
+        this.conditionId = null;
+        this._validate = properties.validate;
+    }
 }
 
 exports.Command = Command;
@@ -90,14 +97,26 @@ Command.prototype = {
 
 exports.CommandMap = function(self, definitions) {
     var commandSet = this.commandSet = [];
+    var conditionMap = this.conditionMap = {};
+
     for (var commandName in definitions) {
         var definition = definitions[commandName];
         var fn = self[commandName];
+        
         var command = CMD(fn, self, definition);
         command.id = commandName;
-        
+
         this[commandName] = command
         commandSet.push(command);
+
+        var conditionId = command.conditionId;
+        if (conditionId) {
+            if (conditionId in conditionMap) {
+                conditionMap[conditionId].commands.push(command)
+            } else {
+                conditionMap[conditionId] = {validate: command._validate, commands: [command]};
+            }
+        }
     }
 }
 
