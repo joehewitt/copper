@@ -3,7 +3,12 @@ var _ = require('underscore'),
     $ = require('ore'),
     html = require('ore/html');
 
-exports.Slider = html.div('.slider', {tabindex: '0', onmousedown: '$onMouseDownTrack'}, [
+var KeyMap = require('./KeyManager').KeyMap,
+    BINDKEY = require('./KeyManager').BINDKEY;
+
+// *************************************************************************************************
+
+exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     html.div('.track'),
     html.div('.buffer'),
     html.div('.thumb', {onmousedown: '$onMouseDownThumb'})
@@ -16,6 +21,18 @@ exports.Slider = html.div('.slider', {tabindex: '0', onmousedown: '$onMouseDownT
     updated: $.event,
     begandragging: $.event,
     endeddragging: $.event,
+
+    get keyMap() {
+        if (!this._keyMap) {
+            this._keyMap = new KeyMap([
+                'HOME', BINDKEY(this.slideHome, this),
+                'END', BINDKEY(this.slideEnd, this),
+                'LEFT', BINDKEY(this.slideDown, this),
+                'RIGHT', BINDKEY(this.slideUp, this),
+            ]);
+        }
+        return this._keyMap;
+    },
 
     construct: function() {
         setTimeout(_.bind(function() {
@@ -53,7 +70,40 @@ exports.Slider = html.div('.slider', {tabindex: '0', onmousedown: '$onMouseDownT
         this.increment = increment;
         this._updateTicks(cb);
     },
+
+    slideHome: function() {
+        this.setValue(this.min);
+        this.updated(this);
+    },
+
+    slideEnd: function() {
+        this.setValue(this.max);
+        this.updated(this);
+    },
     
+    slideDown: function() {
+        this.setValue(this.value + -this.increment);
+        this.updated(this);
+    },
+
+    slideUp: function() {
+        this.setValue(this.value + this.increment);
+        this.updated(this);
+    },
+
+    update: function() {
+        var buffer = $('.buffer', this);
+        buffer.css('width', this.buffer * this.width());
+        if (!this.dragging) {
+            var thumb = $('.thumb', this);
+            var range = this.max - this.min;
+            var value = range > 0 ? this.value / range : 0;
+            thumb.css('left', value * (this.width() - thumb.width()));
+        }
+    },
+
+    // *********************************************************************************************
+
     _updateTicks: function(cb) {
         this.query('.tickmark').remove();
 
@@ -83,20 +133,12 @@ exports.Slider = html.div('.slider', {tabindex: '0', onmousedown: '$onMouseDownT
         }
     },
 
-    update: function() {
-        var buffer = $('.buffer', this);
-        buffer.css('width', this.buffer * this.width());
-        if (!this.dragging) {
-            var thumb = $('.thumb', this);
-            var range = this.max - this.min;
-            var value = range > 0 ? this.value / range : 0;
-            thumb.css('left', value * (this.width() - thumb.width()));
-        }
-    },
+    // *********************************************************************************************
 
     onMouseDownTrack: function(event) {
         if ($(event.target).hasClass('thumb')) return;
 
+        this.val().focus();
         event.preventDefault();
 
         var offsetX = event.clientX - this.offset().left;

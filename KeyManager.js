@@ -8,7 +8,7 @@ var Command = require('./Command').Command;
 
 exports.KeyManager = function(rootElement) {
     this.rootElement = rootElement;
-    this.stack = [[]];
+    this.keyMaps = [];
     this.keysDown = [];
 
     this._onKeyDown = _.bind(this._onKeyDown, this);
@@ -16,7 +16,7 @@ exports.KeyManager = function(rootElement) {
     this._onKeyUp = _.bind(this._onKeyUp, this);
     this._onFocusIn = _.bind(this._onFocusIn, this);
     this._onFocusOut = _.bind(this._onFocusOut, this);
-    this._onBlur = _.bind(this._onBlur, this);
+    this._onWindowBlur = _.bind(this._onWindowBlur, this);
     
     this.activate();
 }
@@ -61,6 +61,15 @@ exports.KeyManager.modifierKeys = {
     17: 'CONTROL',
 };
 
+exports.BINDKEY = function(fn, self) {
+    return function() {
+        fn.apply(self, arguments);
+        return true;
+    }
+}
+
+// *************************************************************************************************
+
 exports.KeyManager.prototype = {
     activate: function() {
         if (window.document) {
@@ -75,7 +84,7 @@ exports.KeyManager.prototype = {
             this.rootElement.listen("keyup", this._onKeyUp);
             this.rootElement.listen("focusin", this._onFocusIn);
             this.rootElement.listen("focusout", this._onFocusOut);
-            $(window).listen("blur", this._onBlur);
+            $(window).listen("blur", this._onWindowBlur);
         }
     },
     
@@ -91,11 +100,11 @@ exports.KeyManager.prototype = {
         this.rootElement.unlisten("keyup", this._onKeyUp);
         this.rootElement.unlisten("focusin", this._onFocusIn);
         this.rootElement.unlisten("focusout", this._onFocusOut);
-        $(window).unlisten("blur", this._onBlur);
+        $(window).unlisten("blur", this._onWindowBlur);
     },
     
     findShortcut: function(commandId) {
-        var keyMaps = this._topKeyMap;
+        var keyMaps = this._activeKeyMaps;
         for (var i = 0, l = keyMaps.length; i < l; ++i) {
             var keyMap = keyMaps[i];
             var combo = keyMap.commandMap[commandId];
@@ -115,27 +124,34 @@ exports.KeyManager.prototype = {
             this.keysDown.push(keyCode);
         }
 
-        var keyMaps = this._topKeyMap;
-        for (var i = keyMaps.length-1; i >= 0; --i) {
-            var keyMap = keyMaps[i];
-            if (keyMap.processSequenceKey(event, this.keysDown)) {
+        var keyMaps = this._activeKeyMaps;
+        for (var i = 0, l = keyMaps.length; i < l; ++i) {
+            if (this._processKeyMap(keyMaps[i], event, keyCode, shift, meta, alt, ctrl, up)) {
                 break;
-            } else {
-                var result = keyMap.processComboKey(event, keyCode, shift, meta, alt, ctrl, up);
-                if (result.handled) {
-                    // Prevent modes from being triggered after a key combo was activated
-                    this.keysDown = [];
-                }
-                if (result.caught || keyMap.exclusive) {
-                    break;
-                }
             }
         }
     },
 
+    processChar: function(event, charCode) {
+        var caught = false;
+
+        var keyMaps = this._activeKeyMaps;
+        for (var i = 0, l = keyMaps.length; i < l; ++i) {
+            var keyMap = keyMaps[i];
+            if (keyMap.processChar(event, charCode)) {
+                caught = true;
+            }
+            if (keyMap.exclusive) {
+                break;
+            }
+        }
+
+        return caught;
+    },
+    
     redispatchSequence: function() {
-        var keyMaps = this._topKeyMap;
-        for (var i = keyMaps.length-1; i >= 0; --i) {
+        var keyMaps = this._activeKeyMaps;
+        for (var i = 0, l = keyMaps.length; i < l; ++i) {
             var keyMap = keyMaps[i];
             if (keyMap.processSequenceKey(null, this.keysDown, true)) {
                 break;
@@ -143,63 +159,70 @@ exports.KeyManager.prototype = {
         }
     },
 
-    processChar: function(event, charCode) {
-        var keyMaps = this._topKeyMap;
-        var processed = false;
-        for (var i = keyMaps.length-1; i >= 0; --i) {
-            var keyMap = keyMaps[i];
-            if (keyMap.processChar(event, charCode)) {
-                processed = true;
-            }
-            if (keyMap.exclusive) {
-                break;
-            }
-        }
-        return processed;
-    },
-    
     add: function(keyMap) {
         keyMap.manager = this;
-        keyMap.activate();
-        this._topKeyMap.push(keyMap);
+        this.keyMaps.push(keyMap);
     },
     
     remove: function(keyMap) {
-        var keyMaps = this._topKeyMap;
+        var keyMaps = this.keyMaps;
         var index = keyMaps.indexOf(keyMap);
         if (index >= 0) {
             keyMaps.splice(index, 1);
-            keyMap.deactivate();
-        }
-    },
-
-    push: function(keyMap) {
-        this.stack.push([]);
-        this.add(keyMap);
-    },
-    
-    pop: function() {
-        var keyMaps = this.stack.pop();
-        for (var i = 0; i < keyMaps.length; ++i) {
-            var keyMap = keyMaps[i];
-            keyMap.deactivate();
         }
     },
 
     // *********************************************************************************************
-    
-    get _topKeyMap() {
-        return this.stack[this.stack.length-1];
-    },
-    
-    get modeKeysDown() {
-        var keyMaps = this._topKeyMap;
+
+    get _activeKeyMaps() {
+        var allKeyMaps = this.focusedKeyMaps
+            ? [].concat(this.focusedKeyMaps)
+            : [];
+
+        var keyMaps = this.keyMaps;
         for (var i = keyMaps.length-1; i >= 0; --i) {
+            allKeyMaps.push(keyMaps[i]);
+        }
+        return allKeyMaps;
+    },
+
+    get _modeKeysDown() {
+        var keyMaps = this._activeKeyMaps;
+        for (var i = 0, l = keyMaps.length; i < l; ++i) {
             var keyMap = keyMaps[i];
             if (keyMap.modeKeysDown) {
                 return true;
             } else if (keyMap.exclusive) {
                 break;
+            }
+        }
+    },
+
+    keyMapsForTarget: function(target) {
+        var keyMaps = [];
+
+        if (target) {
+            for (var target = $(target); target.length; target = target.parent()) {
+                var keyMap = target.keyMap;
+                if (keyMap) {
+                    keyMaps.push(keyMap);
+                }
+            }
+        }
+        return keyMaps;
+    },
+    
+    _processKeyMap: function(keyMap, event, keyCode, shift, meta, alt, ctrl, up) {
+        if (keyMap.processSequenceKey(event, this.keysDown)) {
+            return true;
+        } else {
+            var result = keyMap.processComboKey(event, keyCode, shift, meta, alt, ctrl, up);
+            if (result.handled) {
+                // Prevent modes from being triggered after a key combo was activated
+                this.keysDown = [];
+            }
+            if (result.caught || keyMap.exclusive) {
+                return true;
             }
         }
     },
@@ -216,7 +239,7 @@ exports.KeyManager.prototype = {
     _onKeyPress: function(event) {
         // D&&D("press", event.keyCode, event.charCode);
         if (!event.metaKey && !event.ctrlKey && !event.altKey && event.keyCode < 6000) {
-            if (this.processChar(event, event.charCode) || this.modeKeysDown) {
+            if (this.processChar(event, event.charCode) || this._modeKeysDown) {
                 event.preventDefault();
             }
         }
@@ -230,31 +253,16 @@ exports.KeyManager.prototype = {
     },
 
     _onFocusIn: function(event) {
-        // D&&D('focus', event.target);
-
-        var focusedKeyMap = null;
-        for (var target = $(event.target); target.length; target = target.parent()) {
-            var keyMap = target.keyMap;
-            if (keyMap) {
-                focusedKeyMap = keyMap;
-                break;
-            }
-        }
-        D&&D('focus found', focusedKeyMap);
-        if (this.focusedKeyMap) {
-            this.remove(this.focusedKeyMap);
-        }
-        this.focusedKeyMap = focusedKeyMap;
-        if (focusedKeyMap) {
-            this.add(focusedKeyMap);
-        }
+        // D&&D('focus', event.target.className);
+        this.focusedKeyMaps = this.keyMapsForTarget(event.target);
     },
 
     _onFocusOut: function(event) {
         // D&&D('blur', event.target);
+        this.focusedKeyMaps = null;
     },
 
-    _onBlur: function(event) {
+    _onWindowBlur: function(event) {
         this.keysDown = [];
         this.redispatchSequence();
     }
@@ -264,22 +272,16 @@ exports.KeyManager.prototype = {
 
 exports.KeyMap = function(source) {
     this.source = source;
+    this.activeSequence = null;
+    this.modeKeysDown = false;
     this.sequenceMap = {};
     this.commandMap = {};
+    this.combos = {};
+    this.modes = {};
+    this._parseMap(source);
 }
 
 exports.KeyMap.prototype = {
-    activate: function() {
-        if (!this.combos) {
-            this._parseMap(this.source);
-        }
-    },
-
-    deactivate: function() {
-        this.activeSequence = null;
-        this.modeKeysDown = false;
-    },
-
     processSequenceKey: function(event, keyCodes, forceDefault) {
         var map = this.sequenceMap;
         for (var i = 0, l = keyCodes.length; i < l; ++i) {
@@ -290,10 +292,10 @@ exports.KeyMap.prototype = {
             }
         }   
 
-        var modeKeysDown = true;
+        var forcedDefault = false;
         if (!map && forceDefault) {
             map = this.sequenceMap;
-            modeKeysDown = false;
+            forcedDefault = true;
         }
         if (map && map != this.activeSequence) {
             if (this.activeSequence && this.activeSequence.bindings) {
@@ -308,12 +310,12 @@ exports.KeyMap.prototype = {
                     event.stopPropagation();            
                 }
 
-                this.modeKeysDown = modeKeysDown;
-                
+                this.modeKeysDown = !forcedDefault;
+
                 _.each(map.bindings, function(fn) {
                     fn(true);
                 });
-                return true;
+                return !forcedDefault;
             }
         }
     },
@@ -377,7 +379,8 @@ exports.KeyMap.prototype = {
                     if (combo.up == up) {
                         handled = true;
                         event.preventDefault();
-                        event.stopPropagation();            
+                        event.stopPropagation();
+
                         if (combo.binding(event)) {
                             caught = true;
                             break;
@@ -402,9 +405,6 @@ exports.KeyMap.prototype = {
     },
     
     _parseMap: function(source) {
-        this.combos = {};
-        this.modes = {};
-        
         for (var i = 0; i < source.length; i += 2) {
             var keys = source[i];
             var handler = source[i+1];
