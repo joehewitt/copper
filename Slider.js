@@ -22,16 +22,16 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     begandragging: $.event,
     endeddragging: $.event,
 
-    get keyMap() {
-        if (!this._keyMap) {
-            this._keyMap = new KeyMap([
+    get hotKeys() {
+        if (!this._hotKeys) {
+            this._hotKeys = new KeyMap([
                 'HOME', BINDKEY(this.slideHome, this),
                 'END', BINDKEY(this.slideEnd, this),
                 'LEFT', BINDKEY(this.slideDown, this),
                 'RIGHT', BINDKEY(this.slideUp, this),
             ]);
         }
-        return this._keyMap;
+        return this._hotKeys;
     },
 
     construct: function() {
@@ -47,7 +47,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     },
 
     setValue: function(value) {
-        if (!this.dragging) {
+        if (!this.dragging && value >= this.min && value <= this.max) {
             this.value = value;
             this.update();
         }

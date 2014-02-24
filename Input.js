@@ -24,15 +24,15 @@ exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
         return this.val().value = value;
     },
 
-    get keyMap() {
-        if (!this._keyMap) {
-            this._keyMap = new KeyMap([
+    get hotKeys() {
+        if (!this._hotKeys) {
+            this._hotKeys = new KeyMap([
                 'UP', _.bind(function() { this.incrementNumber(this.increment); }, this),
                 'DOWN', _.bind(function() { this.incrementNumber(-this.increment); }, this),
             ]);
-            this._keyMap.exclusive = true;
+            this._hotKeys.exclusive = true;
         }
-        return this._keyMap;
+        return this._hotKeys;
     },
 
     formatValue: function(value) {

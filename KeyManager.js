@@ -103,7 +103,7 @@ exports.KeyManager.prototype = {
         $(window).unlisten("blur", this._onWindowBlur);
     },
     
-    findShortcut: function(commandId) {
+    findHotKey: function(commandId) {
         var keyMaps = this._activeKeyMaps;
         for (var i = 0, l = keyMaps.length; i < l; ++i) {
             var keyMap = keyMaps[i];
@@ -203,7 +203,7 @@ exports.KeyManager.prototype = {
 
         if (target) {
             for (var target = $(target); target.length; target = target.parent()) {
-                var keyMap = target.keyMap;
+                var keyMap = target.hotKeys;
                 if (keyMap) {
                     keyMaps.push(keyMap);
                 }

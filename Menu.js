@@ -22,9 +22,9 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
         return this.cssClass('visible');
     },
 
-    get keyMap() {
-        if (!this._keyMap) {
-            this._keyMap = new KeyMap([
+    get hotKeys() {
+        if (!this._hotKeys) {
+            this._hotKeys = new KeyMap([
                 'UP', _.bind(this.selectUp, this),
                 'DOWN', _.bind(this.selectDown, this),
                 'HOME', _.bind(this.selectHome, this),
@@ -33,9 +33,9 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
                 'CMD+ENTER', _.bind(this.multiEnter, this),
                 'ESC', _.bind(this.hide, this),
             ]);
-            this._keyMap.exclusive = true;
+            this._hotKeys.exclusive = true;
         }
-        return this._keyMap;
+        return this._hotKeys;
     },
 
     select: function(item) {
@@ -129,9 +129,9 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
                 this.query('.menu-item').each(_.bind(function(item) {
                     var command = item.cmd();
                     if (command) {
-                        var shortcut = keyManager.findShortcut(command.id);
-                        if (shortcut) {
-                            item.keyboardShortcut = shortcut;
+                        var hotKey = keyManager.findHotKey(command.id);
+                        if (hotKey) {
+                            item.hotKey = hotKey;
                         }
                     }
 
@@ -226,16 +226,16 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
 
 exports.MenuItem = html.div('.menu-item', {}, [
     html.div('.menu-item-title', [html.HERE]),
-    html.div('.menu-item-key', []),
+    html.div('.menu-item-hotkey', []),
 ], {
     commanded: $.event,
 
-    get keyboardShortcut() {
+    get hotKey() {
         return this.query('.menu-item-title').text();
     },
 
-    set keyboardShortcut(value) {
-        this.query('.menu-item-key').html(value);
+    set hotKey(value) {
+        this.query('.menu-item-hotkey').html(value);
         return value;
     },
 
