@@ -4,7 +4,11 @@ var $ = require('ore').query,
 
 exports.Tab = html.a('.Tab', {type: 'replace'}, [],
 {
+    get selected() {
+        return this.cssClass('selected');
+    },
+    
     select: function() {
-        this.parent().selectTab(this);
+        this.parent().value = this.attr('value');
     }
 });

@@ -146,8 +146,8 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
         var anchorX = offset.left - parentOffset.left;
         var width = this.width();
         var right = (offset.left + width) - window.scrollX;
-        if (right > window.innerWidth && width < window.innerWidth-offset.left) {
-            anchorX = (offset.left - parentOffset.left) - width;
+        if (right > window.innerWidth && width < window.innerWidth) {
+            anchorX = ((offset.left+offset.width) - parentOffset.left) - width;
         }
 
         var anchorY = (offset.top - parentOffset.top) + offset.height;

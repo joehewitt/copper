@@ -6,42 +6,12 @@ var _ = require('underscore'),
 exports.TabBar = html.div('.TabBar', {onclick: '$onClick'}, [],
 {
     defaultTab: null,
-    selectedTab: null,
-    
-    onClick: function(event) {
-        var tab = $(event.target).closest('.Tab');
-        if (tab.length) {
-            this.selectTab(tab);
-        }
-    },
 
-    selectTab: function(tab) {
-        if (this.selectedTab) {
-            this.selectedTab.removeClass('selected');
-        }
-        this.selectedTab = tab;
-        if (tab) {
-            tab.addClass('selected');
-            this.tabselected(tab);
-        }
-    },
-
-    closeTab: function(tab) {
-        var previous = $(tab).previous();
-        $(tab).remove();
-        if ($(tab).cssClass('selected')) {
-            if (previous.length) {
-                this.selectTab(previous);
-            } else {
-                var first = this.first();
-                if (first.length) {
-                    this.selectTab(this.first());
-                }
-            }
-        }
-        this.tabclosed(tab);
-    },
+    tabselected: $.event,
+    tabclosed: $.event,
     
+    // *************************************************************************************************
+
     construct: function() {
         setTimeout(_.bind(function() {
             if (this.defaultTab) {
@@ -63,7 +33,50 @@ exports.TabBar = html.div('.TabBar', {onclick: '$onClick'}, [],
             }
         }, this));
     },
-    
-    tabselected: $.event,
-    tabclosed: $.event,
+
+    get value() {
+        return this._value;
+    },
+
+    set value(value) {
+        this._value = value;
+
+        this.query('.Tab.selected').removeClass('selected');
+        
+        var selectedTab = this.query('.Tab[value="' + value + '"]');
+        if (selectedTab.length) {
+            selectedTab.addClass('selected');
+
+            this.parent().query('.tab-page.selected').removeClass('selected');
+            this.parent().query('.tab-page[value="' + value + '"]').addClass('selected');
+        }
+        
+        this.tabselected(selectedTab);
+    },
+
+    closeTab: function(tab) {
+        var previous = $(tab).previous();
+        $(tab).remove();
+
+        if ($(tab).cssClass('selected')) {
+            if (previous.length) {
+                this.value = previous.attr('value');
+            } else {
+                var first = this.first();
+                if (first.length) {
+                    this.value = this.first().attr('value');
+                }
+            }
+        }
+        this.tabclosed(tab);
+    },
+
+    // *************************************************************************************************
+
+    onClick: function(event) {
+        var tab = $(event.target).closest('.Tab');
+        if (tab.length) {
+            this.value = tab.attr('value');
+        }
+    },
 });
