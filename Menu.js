@@ -5,10 +5,12 @@ var _ = require('underscore'),
 
 var KeyMap = require('./KeyManager').KeyMap,
     Slider = require('./Slider').Slider,
-    NumericInput = require('./Input').NumericInput;
+    NumericInput = require('./Input').NumericInput,
+    CMD = require('./Command').CMD;
 
 // *************************************************************************************************
 
+var Menu =
 exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
                                   onmouseout: '$onMouseOut', onclick: '$onClick'}, [
 ], {
@@ -118,6 +120,37 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
         }
     },
 
+    populate: function(commands, selectedCommand) {
+        for (var i = 0, l = commands.length; i < l; ++i) {
+            var command = commands[i];
+            if (command == CMD.SEPARATOR) {
+                var separator = new MenuSeparator();
+                this.append(separator);
+            } else if (command.validate()) {
+                var item = new MenuItem();
+                var className = command.className;
+                if (className == 'info') {
+                    item.addClass('typeahead-menu-info');
+                } else {
+                    item.addClass('typeahead-menu-item');
+                    if (className) {
+                        item.addClass(className);
+                    }
+                }
+                if (command.hasChildren) {
+                    item.addClass('has-children');                            
+                }
+                item.title = command.title;
+                item.cmd(command);
+                
+                if (command == selectedCommand) {
+                    this.select(item);
+                }
+                this.append(item);
+            }
+        }            
+    },
+
     show: function(anchorBox) {
         if (!this.onMouseDown) {
             this.showing({target: this});
@@ -157,6 +190,28 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
             anchorY = (offset.top - parentOffset.top) - height;
         }
 
+        this.showAt(anchorX, anchorY);
+    },
+
+    showAt: function(anchorX, anchorY, menuParent) {
+        if (!this.onMouseDown) {
+            this.showing({target: this});
+        }
+
+        if (menuParent) {
+            menuParent.append(this);
+        }
+
+        var width = this.width();
+        if (anchorX+width > window.innerWidth && width < window.innerWidth) {
+            anchorX = anchorX - width;
+        }
+
+        var height = this.height();
+        if (anchorY+height > window.innerHeight && height < window.innerHeight) {
+            anchorY = anchorY - height;
+        }
+
         this.css('left', anchorX);
         this.css('top', anchorY);
 
@@ -168,7 +223,14 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
                 }
                 event.preventDefault();
             }, this);
+            this.onMouseMove = _.bind(function(event) {
+                if (!$(event.target).closest('.menu').equals(this)) {
+                    event.stopPropagation();
+                    event.preventDefault();
+                }
+            }, this);
             $(window).listen('mousedown', this.onMouseDown, true);
+            $(window).listen('mousemove', this.onMouseMove, true);
 
             this.addClass('visible');
             this.val().focus();
@@ -176,28 +238,34 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
             this.shown({target: this});
         }
     },
-
+    
     hide: function() {        
-        if (this.equals($(document.activeElement))) {
-            var container = this.parent().closest('*[tabindex]');
-            if (container.length) {
-                container.val().focus();
-            } else {
-                this.val().blur();
-            }
-        }
-
-        this.removeClass('visible');
-
-        var selected = this.query('.menu-item.selected');
-        if (selected.length) {
-            selected.removeClass('selected');
-        }
-
-        this.hidden({target: this});
-
         window.removeEventListener('mousedown', this.onMouseDown, true);
         delete this.onMouseDown;
+        window.removeEventListener('mousemove', this.onMouseMove, true);
+        delete this.onMouseMove;
+
+        this.addClass('fade');
+
+        setTimeout(_.bind(function() {
+            if (this.equals($(document.activeElement))) {
+                var container = this.parent().closest('*[tabindex]');
+                if (container.length) {
+                    container.val().focus();
+                } else {
+                    this.val().blur();
+                }
+            }
+
+            var selected = this.query('.menu-item.selected');
+            if (selected.length) {
+                selected.removeClass('selected');
+            }
+
+            this.removeClass('fade').removeClass('visible');
+
+            this.hidden({target: this});
+        }, this), 100);
     },
     
     // *********************************************************************************************
@@ -219,11 +287,12 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
         if (!$(event.toElement).closest('.menu').equals(this)) {
             this.select(null);
         }
-    }
+    },
 });    
 
 // *************************************************************************************************
 
+var MenuItem =
 exports.MenuItem = html.div('.menu-item', {}, [
     html.div('.menu-item-title', [html.HERE]),
     html.div('.menu-item-hotkey', []),
@@ -251,10 +320,12 @@ exports.MenuItem = html.div('.menu-item', {}, [
 
 // *************************************************************************************************
 
+var MenuSeparator =
 exports.MenuSeparator = html.div('.menu-separator', {}, [], {});
 
 // *************************************************************************************************
 
+var MenuSliderItem =
 exports.MenuSliderItem = html.div('.menu-slider-item', {}, [
     html.div('.menu-item-title'),
     Slider('.menu-item-slider', {onupdated: '$onSliderUpdated'}),

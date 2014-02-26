@@ -2,7 +2,11 @@
 var $ = require('ore/query'),
     html = require('ore/html');
 
-exports.Container = html.div('.Container', {onmousedown: '$onMouseDown', onclick: '$onClick'}, [],
+
+var Menu = require('./Menu').Menu;
+
+exports.Container = html.div('.Container', {onmousedown: '$onMouseDown', onclick: '$onClick',
+                                            oncontextmenu: '$onContextMenu'}, [],
 {
     onMouseDown: function(event) {
         var button = $(event.target).closest('.button');
@@ -29,6 +33,26 @@ exports.Container = html.div('.Container', {onmousedown: '$onMouseDown', onclick
                     if (command) {
                         command.command(event);
                     }
+                }
+            }
+        }
+    },
+
+    onContextMenu: function(event) {
+        var target = $(event.target);
+        for (var node = target; node.length; node = node.parent()) {
+            if (typeof(node.contextualCommands) == 'function') {
+                var commands = node.contextualCommands(target);
+                if (commands) {
+                    if (commands.length) {
+                        var menu = new Menu();
+                        menu.populate(commands);
+                        menu.showAt(event.pageX, event.pageY, this);
+                    }
+
+                    event.stopPropagation();
+                    event.preventDefault();
+                    return;
                 }
             }
         }
