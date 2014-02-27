@@ -173,6 +173,10 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
             }
         }
 
+        if (!this.parent().length) {
+            anchorBox.parent().append(this);
+        }
+
         var offset = anchorBox.offset();
         var parentOffset = this.parent().offset();
         

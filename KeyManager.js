@@ -393,7 +393,9 @@ exports.KeyMap.prototype = {
         if (!caught && modifierKeys[keyCode] && this.onModifier) {
             this.onModifier(event);
         } else if (!up && !caught && this.catchAll) {
-            this.catchAll(event);
+            if (this.catchAll(event)) {
+                caught = true;
+            }
         }
         return {caught: caught, handled: handled};
     },

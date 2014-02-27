@@ -4,82 +4,102 @@ var $ = require('ore'),
 
 // *************************************************************************************************
 
-exports.Navigator = html.div('.Navigator', {}, [
+exports.Navigator = html.div('.navigator', {}, [
     html.div('.navigator-header-box', {onclick: '$onClickHeader'}),
-    html.div('.navigator-content-box'),
+    html.div('.navigator-page-box', {onnavigateditem: '$onNavigatedItem'}),
 ],
 {
-    topPage: function() {
-        return this.stack ? this.stack[this.stack.length-1] : null;
+    navigated: $.event,
+
+    get currentHeader() {
+        return this.stack ? this.stack[this.stack.length-1].header : null;
+    },
+
+    get currentPage() {
+        return this.stack ? this.stack[this.stack.length-1].page : null;
     },
     
-    pushPage: function(content, header) {
+    // ---------------------------------------------------------------------------------------------
+
+    pushPage: function(page, header) {
+        var oldItem = this.stack ? this.stack[this.stack.length-1] : null
+
         if (!this.stack) {
             this.stack = [];
         }
-
-        var oldPage = this.topPage();
-        this.stack.push({content: content, header: header});
+        this.stack.push({page: page, header: header});
 
         header.addClass('navigator-header');
-        content.addClass('navigator-content');
+        page.addClass('navigator-page');
 
-        if (oldPage) {
-            oldPage.header.addClass('fading-out');
-            oldPage.content.addClass('sliding-out');
+        if (oldItem) {
+            oldItem.header.addClass('fading-out');
+            oldItem.page.addClass('sliding-out');
 
             header.addClass('fading-in');
-            content.addClass('sliding-in');
+            page.addClass('sliding-in');
 
             document.addEventListener('webkitAnimationEnd', endTransition, false);
         }
 
         this.query('.navigator-header-box').append(header);
-        this.query('.navigator-content-box').append(content);
+        this.query('.navigator-page-box').append(page);
 
+        var self = this;
         function endTransition(event) {
-            if (event.animationName == 'pageSlideLeft') {
-                oldPage.content.removeClass('sliding-out').addClass('invisible');
-                content.removeClass('sliding-in');
+            if (event.animationName == 'navigator-slide-in') {
+                oldItem.page.removeClass('sliding-out').addClass('invisible');
+                page.removeClass('sliding-in');
 
-                oldPage.header.removeClass('fading-out').addClass('invisible');
+                oldItem.header.removeClass('fading-out').addClass('invisible');
                 header.removeClass('fading-in');
 
                 document.removeEventListener('webkitAnimationEnd', endTransition, false);
+
+                self.navigated({target: self});
             }
         }
     },
 
-    popPage: function(creator) {
-        var deadPage = this.stack.pop();
-        var returningPage = this.topPage();
+    popPage: function() {
+        var deadItem = this.stack.pop();
+        var returningItem = this.stack[this.stack.length-1];
 
-        deadPage.header.addClass('fading-out');
-        deadPage.content.addClass('sliding-back-out');
+        deadItem.header.addClass('fading-out');
+        deadItem.page.addClass('sliding-back-out');
 
-        returningPage.header.addClass('fading-in').removeClass('invisible');
-        returningPage.content.addClass('sliding-back-in').removeClass('invisible');
+        returningItem.header.addClass('fading-in').removeClass('invisible');
+        returningItem.page.addClass('sliding-back-in').removeClass('invisible');
 
         document.addEventListener('webkitAnimationEnd', endTransition, false);
 
+        var self = this;
         function endTransition(event) {
-            if (event.animationName == 'pageSlideRight') {
-                returningPage.header.removeClass('fading-in');
-                returningPage.content.removeClass('sliding-back-in');
+            if (event.animationName == 'navigator-slide-back-in') {
+                returningItem.header.removeClass('fading-in');
+                returningItem.page.removeClass('sliding-back-in');
 
-                deadPage.header.remove();
-                deadPage.content.remove();
+                deadItem.header.remove();
+                deadItem.page.remove();
 
                 document.removeEventListener('webkitAnimationEnd', endTransition, false);
+
+                self.navigated({target: self});
             }
         }
     },
 
-    // *********************************************************************************************
+    // ---------------------------------------------------------------------------------------------
 
     onClickHeader: function(event) {
         if ($(event.target).closest('.back-button').length) {
             this.popPage();
         }
-    }
+    },
+
+    onNavigatedItem: function(event) {
+        if (event.detail.direction == 'back') {
+            this.popPage();
+        }
+    },
 });

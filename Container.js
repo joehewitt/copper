@@ -41,19 +41,23 @@ exports.Container = html.div('.Container', {onmousedown: '$onMouseDown', onclick
     onContextMenu: function(event) {
         var target = $(event.target);
         for (var node = target; node.length; node = node.parent()) {
-            if (typeof(node.contextualCommands) == 'function') {
-                var commands = node.contextualCommands(target);
-                if (commands) {
-                    if (commands.length) {
-                        var menu = new Menu();
-                        menu.populate(commands);
-                        menu.showAt(event.pageX, event.pageY, this);
-                    }
-
-                    event.stopPropagation();
-                    event.preventDefault();
-                    return;
+            var cmd = node.cmd();
+            var commands;
+            if (cmd) {
+                commands = cmd.actions;
+            } else if (typeof(node.contextualCommands) == 'function') {
+                commands = node.contextualCommands(target);
+            }
+            if (commands) {
+                if (commands.length) {
+                    var menu = new Menu();
+                    menu.populate(commands);
+                    menu.showAt(event.pageX, event.pageY, this);
                 }
+
+                event.stopPropagation();
+                event.preventDefault();
+                return;
             }
         }
     }
