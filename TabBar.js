@@ -80,3 +80,14 @@ exports.TabBar = html.div('.TabBar', {onclick: '$onClick'}, [],
         }
     },
 });
+
+exports.Tab = html.a('.Tab', {type: 'replace'}, [],
+{
+    get selected() {
+        return this.cssClass('selected');
+    },
+    
+    select: function() {
+        this.parent().value = this.attr('value');
+    }
+});

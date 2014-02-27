@@ -1,10 +1,12 @@
 
-var $ = require('ore'),
-    _ = require('underscore'),
+var _ = require('underscore'),
+    $ = require('ore'),
     html = require('ore/html');
 
-exports.List = html.div('.List', {onmousedown: '$onMouseDown'}, [
-    html.div('.ListContainer.vertical', [
+// *************************************************************************************************
+
+exports.Tree = html.div('.Tree', {onmousedown: '$onMouseDown'}, [
+    html.div('.TreeContainer.vertical', [
         html.HERE
     ])
 ],
@@ -14,7 +16,7 @@ exports.List = html.div('.List', {onmousedown: '$onMouseDown'}, [
     selectitem: $.event,
 
     onMouseDown: function(event) {
-        var item = $(event.target).closest('.ListItem');
+        var item = $(event.target).closest('.TreeItem');
         if (event.metaKey && !event.shiftKey && !event.altKey && !event.ctrlKey) {
             this.toggleItem(item);
             event.preventDefault();
@@ -60,7 +62,7 @@ exports.List = html.div('.List', {onmousedown: '$onMouseDown'}, [
         } else {
             var endItem = this.selectedItems.get(this.selectedItems.length-1);
             var searchDown = false, searchUp = false;
-            this.query('.ListItem').find(_.bind(function(searchItem) {
+            this.query('.TreeItem').find(_.bind(function(searchItem) {
                 if (!searchUp && searchItem.equals(item)) {
                     searchDown = true;
                 } else if (!searchDown && searchItem.equals(endItem)) {
@@ -83,3 +85,5 @@ exports.List = html.div('.List', {onmousedown: '$onMouseDown'}, [
         }
     },
 });
+
+exports.TreeItem = html.a('.TreeItem');
