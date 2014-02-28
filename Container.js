@@ -2,8 +2,9 @@
 var $ = require('ore/query'),
     html = require('ore/html');
 
-
 var Menu = require('./Menu').Menu;
+
+// *************************************************************************************************
 
 exports.Container = html.div('.Container', {onmousedown: '$onMouseDown', onclick: '$onClick',
                                             oncontextmenu: '$onContextMenu'}, [],
@@ -51,6 +52,9 @@ exports.Container = html.div('.Container', {onmousedown: '$onMouseDown', onclick
             if (commands) {
                 if (commands.length) {
                     var menu = new Menu();
+                    menu.listen('hidden', function() {
+                        menu.remove();
+                    });
                     menu.populate(commands);
                     menu.showAt(event.pageX, event.pageY, this);
                 }

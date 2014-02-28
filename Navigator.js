@@ -2,11 +2,15 @@
 var $ = require('ore'),
     html = require('ore/html');
 
+var Button = require('./Button').Button;
+
 // *************************************************************************************************
 
 exports.Navigator = html.div('.navigator', {}, [
     html.div('.navigator-header-box', {onclick: '$onClickHeader'}),
-    html.div('.navigator-page-box', {onnavigateditem: '$onNavigatedItem'}),
+    html.div('.navigator-page-box', {onpushed: '$onPushed', onpopped: '$onPopped'}, [
+        html.HERE
+    ]),
 ],
 {
     navigated: $.event,
@@ -21,11 +25,32 @@ exports.Navigator = html.div('.navigator', {}, [
     
     // ---------------------------------------------------------------------------------------------
 
+    replacePage: function(page, header) {
+        var newItem = {page: page, header: header};
+        if (!this.stack) {
+            this.stack = [newItem];
+        } else {
+            this.stack[this.stack.length-1] = newItem;
+        }
+
+        header.addClass('navigator-header');
+        page.addClass('navigator-page');
+
+        this.query('.navigator-header-box').append(header);
+        this.query('.navigator-page-box').append(page);
+    },
+
     pushPage: function(page, header) {
         var oldItem = this.stack ? this.stack[this.stack.length-1] : null
 
         if (!this.stack) {
             this.stack = [];
+        }
+
+        if (typeof(header) == 'string') {
+            var bar = new exports.NavigationBar();
+            bar.html(header);
+            header = bar;
         }
         this.stack.push({page: page, header: header});
 
@@ -44,15 +69,16 @@ exports.Navigator = html.div('.navigator', {}, [
 
         this.query('.navigator-header-box').append(header);
         this.query('.navigator-page-box').append(page);
+        this.query('.navigator-page-box').css('height', page.height());
 
         var self = this;
         function endTransition(event) {
             if (event.animationName == 'navigator-slide-in') {
-                oldItem.page.removeClass('sliding-out').addClass('invisible');
+                oldItem.page.removeClass('sliding-out').addClass('hidden');
                 page.removeClass('sliding-in');
-
-                oldItem.header.removeClass('fading-out').addClass('invisible');
+                oldItem.header.removeClass('fading-out').addClass('hidden');
                 header.removeClass('fading-in');
+                self.query('.navigator-page-box').css('height', null);
 
                 document.removeEventListener('webkitAnimationEnd', endTransition, false);
 
@@ -61,23 +87,48 @@ exports.Navigator = html.div('.navigator', {}, [
         }
     },
 
-    popPage: function() {
+    popPage: function(returnToBeginning, notAnimated) {
+        if (this.stack.length < 2) {
+            return;
+        }
+
         var deadItem = this.stack.pop();
+        if (returnToBeginning) {
+            for (var i = this.stack.length-1; i > 0; --i) {
+                var item = this.stack[i];
+                item.header.remove();
+                item.page.remove();
+            }
+            this.stack = this.stack.slice(0, 1);
+        }
         var returningItem = this.stack[this.stack.length-1];
 
-        deadItem.header.addClass('fading-out');
-        deadItem.page.addClass('sliding-back-out');
+        if (!notAnimated) {
+            deadItem.header.addClass('fading-out');
+            deadItem.page.addClass('sliding-back-out');
+            returningItem.header.addClass('fading-in');
+            returningItem.page.addClass('sliding-back-in');
+        } else {
+            deadItem.header.remove();
+            deadItem.page.remove();            
+        }
 
-        returningItem.header.addClass('fading-in').removeClass('invisible');
-        returningItem.page.addClass('sliding-back-in').removeClass('invisible');
+        returningItem.header.removeClass('hidden');
+        returningItem.page.removeClass('hidden');
 
-        document.addEventListener('webkitAnimationEnd', endTransition, false);
+        if (notAnimated) {
+            this.navigated({target: this});            
+        } else {
+            this.query('.navigator-page-box').css('height', returningItem.page.height());
+            document.addEventListener('webkitAnimationEnd', endTransition, false);
+        }
 
         var self = this;
         function endTransition(event) {
             if (event.animationName == 'navigator-slide-back-in') {
                 returningItem.header.removeClass('fading-in');
                 returningItem.page.removeClass('sliding-back-in');
+                self.query('.navigator-page-box').css('height', null);
 
                 deadItem.header.remove();
                 deadItem.page.remove();
@@ -97,9 +148,23 @@ exports.Navigator = html.div('.navigator', {}, [
         }
     },
 
-    onNavigatedItem: function(event) {
-        if (event.detail.direction == 'back') {
-            this.popPage();
-        }
+    onPushed: function(event) {
+        // XXXjoe Someday provide a standard way to automate this so others don't have
+        // to implement their own push handler
+
+        // var command = event.detail.item.cmd();
+        // if (command && command.hasChildren) {
+        //     var page = this.createNewPage(command.children);
+        //     this.pushPage(page, command.title);
+        // }
+    },
+
+    onPopped: function(event) {
+        this.popPage();
     },
 });
+
+exports.NavigationBar = html.div('.navigation-bar', {}, [
+    Button('.navigation-back-button.back-button', ['<']),
+    html.div('.navigation-bar-title', {}, [html.HERE]),
+]);

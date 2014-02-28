@@ -96,7 +96,7 @@ exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
 
             this.onMouseUp = _.bind(function(event) {
                 if (event.target == this.val()) {
-                    this.val().focus();
+                    this.focus();
                 }
                 $(window).unlisten('mousemove', this.onMouseMove, true)
                          .unlisten('mouseup', this.onMouseUp);

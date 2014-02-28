@@ -4,15 +4,22 @@ var _ = require('underscore'),
     html = require('ore/html');
 
 var KeyMap = require('./KeyManager').KeyMap,
+    Navigator = require('./Navigator').Navigator,
     Slider = require('./Slider').Slider,
+    List = require('./List').List,
+    ListItem = require('./List').ListItem,
+    ListSeparator = require('./List').ListSeparator,
     NumericInput = require('./Input').NumericInput,
     CMD = require('./Command').CMD;
 
 // *************************************************************************************************
 
 var Menu =
-exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
-                                  onmouseout: '$onMouseOut', onclick: '$onClick'}, [
+exports.Menu = Navigator('.menu', {}, [
+    List('.menu-root-list', {tabindex: '-1', onselected: '$onListSelected',
+                             oncommanded: '$onListCommanded'}, [
+        html.HERE,
+    ])
 ], {
     showing: $.event,
     shown: $.event,
@@ -24,15 +31,13 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
         return this.cssClass('visible');
     },
 
+    get list() {
+        return this.query('.menu-root-list');
+    },
+
     get hotKeys() {
         if (!this._hotKeys) {
             this._hotKeys = new KeyMap([
-                'UP', _.bind(this.selectUp, this),
-                'DOWN', _.bind(this.selectDown, this),
-                'HOME', _.bind(this.selectHome, this),
-                'END', _.bind(this.selectEnd, this),
-                'ENTER', _.bind(this.enter, this),
-                'CMD+ENTER', _.bind(this.multiEnter, this),
                 'ESC', _.bind(this.hide, this),
             ]);
             this._hotKeys.exclusive = true;
@@ -40,115 +45,24 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
         return this._hotKeys;
     },
 
+    // ---------------------------------------------------------------------------------------------
+
+    focus: function() {
+        return this.list.focus();
+    },
+
+    copy: function(doubleTap) {
+        return this.list.copy(doubleTap);
+    },
+
+    // ---------------------------------------------------------------------------------------------
+
     select: function(item) {
-        this.query('.menu-item.selected').removeClass('selected');
-        if (item && item.length) {
-            item.addClass('selected');     
-            this.selected({target: item});
-        } else {
-            this.selected({target: null});            
-        }
-    },
-
-    selectHome: function() {
-        var items = this.query('.menu-item');
-        this.select(items.get(0));
-    },
-
-    selectEnd: function() {
-        var items = this.query('.menu-item');
-        this.select(items.get(items.length-1));
-    },
-
-    selectUp: function() {
-        var selected = this.query('.menu-item.selected');
-        if (selected.length) {
-            for (var prev = selected.previous(); prev.length; prev = prev.previous()) {
-                if (prev.cssClass('menu-item')) {
-                    this.select(prev);
-                    break;
-                }
-            }
-        } else {
-            this.selectEnd();
-        }
-    },
-
-    selectDown: function() {
-        var selected = this.query('.menu-item.selected');
-        if (selected.length) {
-            for (var next = selected.next(); next.length; next = next.next()) {
-                if (next.cssClass('menu-item')) {
-                    this.select(next);
-                    break;
-                }
-            }
-        } else {
-            this.selectHome();
-        }
-    },
-
-    enter: function() {
-        var selected = this.query('.menu-item.selected');
-        if (selected.length) {
-            this.enterItem(selected);
-        }
-    },
-
-    multiEnter: function() {
-        var selected = this.query('.menu-item.selected');
-        if (selected.length) {
-            this.enterItem(selected, true);
-        }
-    },
-
-    enterItem: function(item, shouldNotHide) {
-        var command = item.cmd();
-
-        var evt = {target: item, command: command};
-        if (command) {
-            command.command(evt);
-        }
-        if (item.commanded) {
-            item.commanded(evt);
-        }
-        if (!evt.prevent) {
-            this.commanded(evt);
-        }
-        if (!shouldNotHide && !evt.prevent) {
-            this.hide();
-        }
+        this.list.select(item);
     },
 
     populate: function(commands, selectedCommand) {
-        for (var i = 0, l = commands.length; i < l; ++i) {
-            var command = commands[i];
-            if (command == CMD.SEPARATOR) {
-                var separator = new MenuSeparator();
-                this.append(separator);
-            } else if (command.validate()) {
-                var item = new MenuItem();
-                var className = command.className;
-                if (className == 'info') {
-                    item.addClass('typeahead-menu-info');
-                } else {
-                    item.addClass('typeahead-menu-item');
-                    if (className) {
-                        item.addClass(className);
-                    }
-                }
-                if (command.hasChildren) {
-                    item.addClass('has-children');                            
-                }
-                item.title = command.title;
-                item.cmd(command);
-                
-                if (command == selectedCommand) {
-                    this.select(item);
-                }
-                this.append(item);
-            }
-        }            
+        this.list.populate(commands, selectedCommand, MenuItem, MenuSeparator);
     },
 
     show: function(anchorBox) {
@@ -237,7 +151,7 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
             $(window).listen('mousemove', this.onMouseMove, true);
 
             this.addClass('visible');
-            this.val().focus();
+            this.focus();
 
             this.shown({target: this});
         }
@@ -252,13 +166,11 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
         this.addClass('fade');
 
         setTimeout(_.bind(function() {
-            if (this.equals($(document.activeElement))) {
-                var container = this.parent().closest('*[tabindex]');
-                if (container.length) {
-                    container.val().focus();
-                } else {
-                    this.val().blur();
-                }
+            var container = this.parent().closest('*[tabindex]');
+            if (container.length) {
+                container.focus();
+            } else {
+                this.val().blur();
             }
 
             var selected = this.query('.menu-item.selected');
@@ -271,61 +183,30 @@ exports.Menu = html.div('.menu', {tabindex: '-1', onmouseover: '$onMouseOver',
             this.hidden({target: this});
         }, this), 100);
     },
-    
-    // *********************************************************************************************
 
-    onClick: function(event) {
-        var item = $(event.target).closest('.menu-item');
-        if (item.length) {
-            this.enter(item);
-            event.preventDefault();
-        }
+    // ---------------------------------------------------------------------------------------------
+
+    onListSelected: function(event) {
+        this.selected(event);
     },
 
-    onMouseOver: function(event) {
-        var item = $(event.target).closest('.menu-item');
-        this.select(item.length ? item : null);
-    },
-
-    onMouseOut: function(event) {
-        if (!$(event.toElement).closest('.menu').equals(this)) {
-            this.select(null);
-        }
+    onListCommanded: function(event) {
+        this.commanded(event);
+        this.hide();
     },
 });    
 
 // *************************************************************************************************
 
 var MenuItem =
-exports.MenuItem = html.div('.menu-item', {}, [
-    html.div('.menu-item-title', [html.HERE]),
-    html.div('.menu-item-hotkey', []),
-], {
-    commanded: $.event,
-
-    get hotKey() {
-        return this.query('.menu-item-title').text();
-    },
-
-    set hotKey(value) {
-        this.query('.menu-item-hotkey').html(value);
-        return value;
-    },
-
-    get title() {
-        return this.query('.menu-item-title').text();
-    },
-
-    set title(value) {
-        this.query('.menu-item-title').html(value);
-        return value;
-    },
-});    
+exports.MenuItem = ListItem('.menu-item', {}, [
+    html.HERE,
+]);    
 
 // *************************************************************************************************
 
 var MenuSeparator =
-exports.MenuSeparator = html.div('.menu-separator', {}, [], {});
+exports.MenuSeparator = ListSeparator('.menu-separator', {}, [], {});
 
 // *************************************************************************************************
 

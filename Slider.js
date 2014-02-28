@@ -138,7 +138,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     onMouseDownTrack: function(event) {
         if ($(event.target).cssClass('thumb')) return;
 
-        this.val().focus();
+        this.focus();
         event.preventDefault();
 
         var offsetX = event.clientX - this.offset().left;
@@ -163,7 +163,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
 
     onMouseDownThumb: function(event) {
         event.preventDefault();
-        this.val().focus();
+        this.focus();
 
         var thumb = $('.thumb', this);
 

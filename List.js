@@ -4,18 +4,17 @@ var _ = require('underscore'),
     html = require('ore/html');
 
 var KeyMap = require('./KeyManager').KeyMap,
-    Menu = require('./Menu').Menu,
     BINDKEY = require('./KeyManager').BINDKEY,
     CMD = require('./Command').CMD;
 
 // *************************************************************************************************
 
 exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onMouseOut',
-                                  onclick: '$onClick'}, [
-], {
+                                  onclick: '$onClick'}, [], {
     commanded: $.event,
     selected: $.event,
-    navigateditem: $.event.dom('navigateditem', true),
+    pushed: $.event.dom('pushed', true),
+    popped: $.event.dom('popped', true),
 
     get hotKeys() {
         if (!this._hotKeys) {
@@ -27,19 +26,10 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
                 'LEFT', BINDKEY(this.navigateBack, this),
                 'RIGHT', BINDKEY(this.navigateForward, this),
                 'ENTER', BINDKEY(this.enter, this),
-                'ESC', BINDKEY(this.showContextMenu, this),
                 '*', _.bind(this.onInput, this),
             ]);
         }
         return this._hotKeys;
-    },
-
-    onInput: function(event) {
-        var c = event.keyCode;
-        if ((c >= 65 && c <= 90) || (c >= 48 && c <= 57)) {
-            this.selectByText(String.fromCharCode(c));
-            return true;
-        }
     },
 
     // ---------------------------------------------------------------------------------------------
@@ -121,12 +111,12 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
 
     navigateForward: function() {
         var selected = this.query('.list-item.selected');
-        this.navigateditem({target: this, item: selected, direction: 'forward'});
+        this.pushed({target: this, item: selected});
     },
 
     navigateBack: function() {
         var selected = this.query('.list-item.selected');
-        this.navigateditem({target: this, item: selected, direction: 'back'});
+        this.popped({target: this, item: selected});
     },
 
     enter: function() {
@@ -138,9 +128,10 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
 
     enterItem: function(item) {
         var command = item.cmd();
-        if (command && command.hasCommand) {
+        if (command && command.hasChildren) {
+            this.navigateForward();
+        } else {
             var evt = {target: item, command: command};
-
             if (command) {
                 command.command(evt);
             }
@@ -150,48 +141,55 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
             if (!evt.prevent) {
                 this.commanded(evt);
             }
-        } else {
-            this.navigateForward();
         }
     },
 
-    showContextMenu: function() {
+    copy: function(doubleTap) {
         var selected = this.query('.list-item.selected');
         if (selected.length) {
-            var cmd = selected.cmd();
-            if (cmd) {
-                var commands = cmd.actions;
-                if (commands) {
-                    var menu = new Menu();
-                    menu.populate(commands);
-                    menu.show(selected);
-                }
+            var command = selected.cmd();
+            if (command) {
+                return command.copy(doubleTap);
             }
-        } 
+        }
     },
 
-    populate: function(commands, selectedCommand) {
+    populate: function(commands, selectedCommand, itemType, separatorType) {
+        if (!itemType) {
+            itemType = ListItem;
+        }
+        if (!separatorType) {
+            separatorType = ListSeparator;
+        }
+
         for (var i = 0, l = commands.length; i < l; ++i) {
             var command = commands[i];
             if (command == CMD.SEPARATOR) {
-                var separator = new ListSeparator();
+                var separator = new separatorType();
                 this.append(separator);
             } else if (command.validate()) {
-                var item = new ListItem();
-                item.title = command.title;
-                item.cmd(command);
-
                 var className = command.className;
-                if (className) {
-                    item.addClass(className);
+                if (className == 'info') {
+                    var item = new html.div()
+                    item.addClass('list-info');
+                    item.html(command.title);
+                    this.append(item);
+                } else {
+                    var item = new itemType();
+                    item.title = command.title;
+                    item.cmd(command);
+
+                    if (className) {
+                        item.addClass(className);
+                    }
+                    if (command.hasChildren) {
+                        item.addClass('has-children');
+                    }                
+                    if (command == selectedCommand) {
+                        this.select(item);
+                    }
+                    this.append(item);
                 }
-                if (command.hasChildren) {
-                    item.addClass('has-children');
-                }                
-                if (command == selectedCommand) {
-                    this.select(item);
-                }
-                this.append(item);
             }
         }            
     },
@@ -216,6 +214,15 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
             this.select(null);
         }
     },
+
+    onInput: function(event) {
+        var c = event.keyCode;
+        if (!event.metaKey && !event.shiftKey && !event.ctrlKey && !event.altKey)
+        if ((c >= 65 && c <= 90) || (c >= 48 && c <= 57)) {
+            this.selectByText(String.fromCharCode(c));
+            return true;
+        }
+    },    
 });    
 
 // *************************************************************************************************
@@ -232,7 +239,7 @@ exports.ListItem = html.div('.list-item', {}, [
     },
 
     set hotKey(value) {
-        this.query('.list-item-hotkey').text(value);
+        this.query('.list-item-hotkey').html(value);
         return value;
     },
 
@@ -241,7 +248,7 @@ exports.ListItem = html.div('.list-item', {}, [
     },
 
     set title(value) {
-        this.query('.list-item-title').text(value);
+        this.query('.list-item-title').html(value);
         return value;
     },
 });    
