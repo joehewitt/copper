@@ -8,11 +8,12 @@ var Button = require('./Button').Button;
 
 exports.Navigator = html.div('.navigator', {}, [
     html.div('.navigator-header-box', {onclick: '$onClickHeader'}),
-    html.div('.navigator-page-box', {onpushed: '$onPushed', onpopped: '$onPopped'}, [
+    html.div('.navigator-page-box', {onpopped: '$onPopped'}, [
         html.HERE
     ]),
 ],
 {
+    navigating: $.event,
     navigated: $.event,
 
     get currentHeader() {
@@ -53,6 +54,8 @@ exports.Navigator = html.div('.navigator', {}, [
             header = bar;
         }
         this.stack.push({page: page, header: header});
+
+        this.navigating({target: this, page: page, header: header});
 
         header.addClass('navigator-header');
         page.addClass('navigator-page');
@@ -103,6 +106,9 @@ exports.Navigator = html.div('.navigator', {}, [
         }
         var returningItem = this.stack[this.stack.length-1];
 
+        this.navigating({target: this, page: returningItem.page, header: returningItem.header,
+                         back: true});
+
         if (!notAnimated) {
             deadItem.header.addClass('fading-out');
             deadItem.page.addClass('sliding-back-out');
@@ -135,7 +141,7 @@ exports.Navigator = html.div('.navigator', {}, [
 
                 document.removeEventListener('webkitAnimationEnd', endTransition, false);
 
-                self.navigated({target: self});
+                self.navigated({target: self, back: true});
             }
         }
     },

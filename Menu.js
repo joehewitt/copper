@@ -15,17 +15,15 @@ var KeyMap = require('./KeyManager').KeyMap,
 // *************************************************************************************************
 
 var Menu =
-exports.Menu = Navigator('.menu', {}, [
-    List('.menu-root-list', {tabindex: '-1', onselected: '$onListSelected',
-                             oncommanded: '$onListCommanded'}, [
+exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '$onListCommanded'},
+[
+    List('.menu-root-list', {tabindex: '-1'}, [
         html.HERE,
     ])
 ], {
     showing: $.event,
     shown: $.event,
     hidden: $.event,
-    commanded: $.event,
-    selected: $.event,
 
     get visible() {
         return this.cssClass('visible');
@@ -54,6 +52,34 @@ exports.Menu = Navigator('.menu', {}, [
     copy: function(doubleTap) {
         return this.list.copy(doubleTap);
     },
+    
+    selectHome: function() {
+        this.list.selectHome();
+    },
+
+    selectEnd: function() {
+        this.list.selectEnd();
+    },
+
+    selectUp: function() {
+        this.list.selectUp();
+    },
+
+    selectDown: function() {
+        this.list.selectDown();
+    },
+
+    navigateForward: function() {
+        this.list.navigateForward();
+    },
+
+    navigateBack: function() {
+        this.list.navigateBack();
+    },
+
+    enter: function() {
+        this.list.enter();
+    },
 
     // ---------------------------------------------------------------------------------------------
 
@@ -61,8 +87,8 @@ exports.Menu = Navigator('.menu', {}, [
         this.list.select(item);
     },
 
-    populate: function(commands, selectedCommand) {
-        this.list.populate(commands, selectedCommand, MenuItem, MenuSeparator);
+    populate: function(commands, selectedCommand, hideInvalidItems) {
+        this.list.populate(commands, selectedCommand, hideInvalidItems, MenuItem, MenuSeparator);
     },
 
     show: function(anchorBox) {
@@ -70,22 +96,7 @@ exports.Menu = Navigator('.menu', {}, [
             this.showing({target: this});
         }
 
-        for (var parent = this; parent.length; parent = parent.parent()) {
-            if (parent.keyManager) {
-                var keyManager = parent.keyManager;
-                this.query('.menu-item').each(_.bind(function(item) {
-                    var command = item.cmd();
-                    if (command) {
-                        var hotKey = keyManager.findHotKey(command.id);
-                        if (hotKey) {
-                            item.hotKey = hotKey;
-                        }
-                    }
-
-                }, this));
-                break;                
-            }
-        }
+        this.updateHotKeys(this.list);
 
         if (!this.parent().length) {
             anchorBox.parent().append(this);
@@ -108,7 +119,7 @@ exports.Menu = Navigator('.menu', {}, [
             anchorY = (offset.top - parentOffset.top) - height;
         }
 
-        this.showAt(anchorX, anchorY);
+        return this.showAt(anchorX, anchorY);
     },
 
     showAt: function(anchorX, anchorY, menuParent) {
@@ -147,21 +158,30 @@ exports.Menu = Navigator('.menu', {}, [
                     event.preventDefault();
                 }
             }, this);
-            $(window).listen('mousedown', this.onMouseDown, true);
-            $(window).listen('mousemove', this.onMouseMove, true);
+            this.onWindowBlur = _.bind(function(event) {
+                if (event.target == window) {
+                    this.hide();
+                }
+            }, this);
+            $(window).listen('mousedown', this.onMouseDown, true)
+                     .listen('mousemove', this.onMouseMove, true)
+                     .listen('blur', this.onWindowBlur, true);
 
             this.addClass('visible');
             this.focus();
 
             this.shown({target: this});
+            return true;
         }
     },
     
     hide: function() {        
-        window.removeEventListener('mousedown', this.onMouseDown, true);
+        $(window).unlisten('mousedown', this.onMouseDown, true)
+                 .unlisten('mousemove', this.onMouseMove, true)
+                 .unlisten('blur', this.onWindowBlur, true);
         delete this.onMouseDown;
-        window.removeEventListener('mousemove', this.onMouseMove, true);
         delete this.onMouseMove;
+        delete this.onWindowBlur;
 
         this.addClass('fade');
 
@@ -184,15 +204,37 @@ exports.Menu = Navigator('.menu', {}, [
         }, this), 100);
     },
 
+    updateHotKeys: function(page) {
+        for (var parent = this; parent.length; parent = parent.parent()) {
+            if (parent.keyManager) {
+                var keyManager = parent.keyManager;
+                page.query('.menu-item').each(_.bind(function(item) {
+                    var command = item.cmd();
+                    if (command) {
+                        var hotKey = keyManager.findHotKey(command.id);
+                        if (hotKey) {
+                            item.hotKey = hotKey;
+                        }
+                    }
+
+                }, this));
+                break;                
+            }
+        }        
+    },
+
     // ---------------------------------------------------------------------------------------------
 
-    onListSelected: function(event) {
-        this.selected(event);
+    onNavigating: function(event) {
+        if (!event.back) {
+            this.updateHotKeys(event.page);
+        }
     },
 
     onListCommanded: function(event) {
-        this.commanded(event);
-        this.hide();
+        if (!event.defaultPrevented) {
+            this.hide();
+        }
     },
 });    
 

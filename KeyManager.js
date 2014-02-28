@@ -40,6 +40,7 @@ exports.KeyManager.namedKeys = {
     BACKSPACE: 8,
     DEL: 46,
     TAB: 9,
+    BACKTICK: 192,
     ENTER: 13,
     RETURN: 13,
     SHIFT: 16,

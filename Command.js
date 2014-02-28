@@ -9,6 +9,7 @@ function Command(properties) {
     this._command = properties.command;
     this._children = properties.children;
     this._actions = properties.actions;
+    this._value = properties.value;
     this._hover = properties.hover;
     this._caption = properties.caption;
     this._copy = properties.copy;
@@ -30,9 +31,15 @@ function Command(properties) {
 exports.Command = Command;
 
 Command.prototype = {
+    get value() { 
+        if (this._value) {
+            return this._value.apply(this.self);
+        }
+    },    
+
     get title() { 
         if (typeof(this._title) == 'function') {
-            return this._title.apply(this.self);
+            return this._title.apply(this.self, [this.value]);
         } else {
             return this._title;
         }
@@ -40,7 +47,7 @@ Command.prototype = {
 
     get caption() { 
         if (typeof(this._caption) == 'function') {
-            return this._caption.apply(this.self);
+            return this._caption.apply(this.self, [this.value]);
         } else {
             return '';
         }
@@ -48,7 +55,7 @@ Command.prototype = {
 
     get className() { 
         if (typeof(this._className) == 'function') {
-            return this._className.apply(this.self);
+            return this._className.apply(this.self, [this.value]);
         } else {
             return this._className;
         }
@@ -56,19 +63,19 @@ Command.prototype = {
 
     get actions() { 
         if (this._actions) {
-            return this._actions.apply(this.self);
+            return this._actions.apply(this.self, [this.value]);
         }
     },    
 
     get children() { 
         if (this._children) {
-            return this._children.apply(this.self);
+            return this._children.apply(this.self, [this.value]);
         }
     },    
 
     validate: function() { 
         if (this._validate) {
-            return this._validate.apply(this.self);
+            return this._validate.apply(this.self, [this.value]);
         } else {
             return true;
         }

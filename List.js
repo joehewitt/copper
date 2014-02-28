@@ -11,8 +11,8 @@ var KeyMap = require('./KeyManager').KeyMap,
 
 exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onMouseOut',
                                   onclick: '$onClick'}, [], {
-    commanded: $.event,
-    selected: $.event,
+    selected: $.event.dom('selected', true),
+    commanded: $.event.dom('commanded', true),
     pushed: $.event.dom('pushed', true),
     popped: $.event.dom('popped', true),
 
@@ -36,13 +36,15 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
 
     select: function(item) {
         var previousItems = this.query('.list-item.selected');
+        var hadSelection = false;
         previousItems.removeClass('selected').each(function(item) {
             var command = item.cmd();
             if (command) {
                 command.hover(false);
             }
+            hadSelection = true;
         });
-        if (item && item.length) {
+        if (item && item.length && !item.cssClass('disabled')) {
             item.addClass('selected').each(function(item) {
                 var command = item.cmd();
                 if (command) {
@@ -50,7 +52,7 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
                 }
             });
             this.selected({target: item});
-        } else {
+        } else if (hadSelection) {
             this.selected({target: null});            
         }
     },
@@ -72,12 +74,12 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
     },
 
     selectHome: function() {
-        var items = this.query('.list-item');
-        this.select(items.get(0));
+        var item = this.query('.list-item:not(.disabled)', true);
+        this.select(item.get(0));
     },
 
     selectEnd: function() {
-        var items = this.query('.list-item');
+        var items = this.query('.list-item:not(.disabled)');
         this.select(items.get(items.length-1));
     },
 
@@ -85,7 +87,7 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
         var selected = this.query('.list-item.selected');
         if (selected.length) {
             for (var prev = selected.previous(); prev.length; prev = prev.previous()) {
-                if (prev.cssClass('list-item')) {
+                if (prev.cssClass('list-item') && !prev.cssClass('disabled')) {
                     this.select(prev);
                     break;
                 }
@@ -99,7 +101,7 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
         var selected = this.query('.list-item.selected');
         if (selected.length) {
             for (var next = selected.next(); next.length; next = next.next()) {
-                if (next.cssClass('list-item')) {
+                if (next.cssClass('list-item') && !next.cssClass('disabled')) {
                     this.select(next);
                     break;
                 }
@@ -154,7 +156,7 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
         }
     },
 
-    populate: function(commands, selectedCommand, itemType, separatorType) {
+    populate: function(commands, selectedCommand, hideInvalidItems, itemType, separatorType) {
         if (!itemType) {
             itemType = ListItem;
         }
@@ -167,7 +169,7 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
             if (command == CMD.SEPARATOR) {
                 var separator = new separatorType();
                 this.append(separator);
-            } else if (command.validate()) {
+            } else {
                 var className = command.className;
                 if (className == 'info') {
                     var item = new html.div()
@@ -175,20 +177,22 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
                     item.html(command.title);
                     this.append(item);
                 } else {
-                    var item = new itemType();
-                    item.title = command.title;
-                    item.cmd(command);
+                    var isValid = command.validate();
+                    if (isValid || !hideInvalidItems) {
+                        var item = new itemType();
+                        item.title = command.title;
+                        item.cmd(command);
+                        item.cssClass('disabled', !isValid);
+                        item.cssClass('has-children', command.hasChildren);
 
-                    if (className) {
-                        item.addClass(className);
+                        if (className) {
+                            item.addClass(className);
+                        }
+                        if (command == selectedCommand) {
+                            this.select(item);
+                        }
+                        this.append(item);
                     }
-                    if (command.hasChildren) {
-                        item.addClass('has-children');
-                    }                
-                    if (command == selectedCommand) {
-                        this.select(item);
-                    }
-                    this.append(item);
                 }
             }
         }            
@@ -239,7 +243,7 @@ exports.ListItem = html.div('.list-item', {}, [
     },
 
     set hotKey(value) {
-        this.query('.list-item-hotkey').html(value);
+        this.query('.list-item-hotkey').css('display', 'block').html(value);
         return value;
     },
 

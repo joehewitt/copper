@@ -13,9 +13,10 @@ exports.Container = html.div('.Container', {onmousedown: '$onMouseDown', onclick
         var button = $(event.target).closest('.button');
         if (button.length && !button.cssClass('disabled')) {
             if (button.attr('menu')) {
-                button.showMenu();
-                event.preventDefault();
-                event.stopPropagation();
+                if (button.showMenu()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
             }
         }
     },

@@ -43,7 +43,7 @@ exports.Button = html.div('.button', {}, [
 
                 this.addClass('depressed');
                 menu.listen('hidden', onHidden);
-                menu.show(this);
+                return menu.show(this);
             }
         }
     }
