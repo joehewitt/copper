@@ -16,7 +16,6 @@ function Command(properties) {
     this.hasCommand = properties.command || false;
     this.hasChildren = properties.children || false;
     this.hasHover = properties.hover || false;
-    this.isPrompt = properties.isPrompt || false;
     this.self = properties.self || this;
 
     if (typeof(properties.validate) == 'string') {
@@ -62,14 +61,18 @@ Command.prototype = {
     },    
 
     get actions() { 
-        if (this._actions) {
+        if (typeof(this._actions) == 'function') {
             return this._actions.apply(this.self, [this.value]);
+        } else if (this._actions instanceof Array) {
+            return expandCommands(this._actions, this.self);
         }
     },    
 
     get children() { 
-        if (this._children) {
+        if (typeof(this._children) == 'function') {
             return this._children.apply(this.self, [this.value]);
+        } else if (this._children instanceof Array) {
+            return expandCommands(this._children, this.self);
         }
     },    
 
@@ -103,7 +106,7 @@ Command.prototype = {
 // *************************************************************************************************
 
 exports.CommandMap = function(self, definitions) {
-    var commandSet = this.commandSet = [];
+    var map = this.map = {};
     var conditionMap = this.conditionMap = {};
 
     for (var commandName in definitions) {
@@ -113,8 +116,7 @@ exports.CommandMap = function(self, definitions) {
         var command = CMD(fn, self, definition);
         command.id = commandName;
 
-        this[commandName] = command
-        commandSet.push(command);
+        map[commandName] = command
 
         var conditionId = command.conditionId;
         if (conditionId) {
@@ -128,6 +130,55 @@ exports.CommandMap = function(self, definitions) {
 }
 
 exports.CommandMap.prototype = {
+    find: function(name) {
+        var found = this.nextMap ? this.nextMap.find(name) : null;
+        if (!found && name in this.map) {
+            found = this.map[name]
+        }
+        return found;
+    },
+
+    match: function(pattern) {
+        var matches = [];
+        if (this.nextMap) {
+            matches = matches.concat(this.nextMap.match(pattern));
+        }
+
+        for (var name in this.map) {
+            var command = this.map[name];
+            var title = command.title;
+            if (title && pattern.exec(title)) {
+                matches.push(command);
+            }
+        }
+        return matches;
+    },
+
+    add: function(map) {
+        if (this.lastMap) {
+            this.lastMap.nextMap = map;
+        } else {
+            this.nextMap = this.lastMap = map;
+        }
+        this.lastMap = map;
+    },
+
+    remove: function(map) {
+        var previous;
+        for (var sibling = this.nextMap; sibling; sibling = sibling.nextMap) {
+            if (sibling == map) {
+                if (previous) {
+                    previous.nextMap = sibling.nextMap;
+                } else {
+                    this.nextMap = sibling.nextMap;
+                }
+                if (this.lastMap == map) {
+                    this.lastMap = previous;
+                }
+            }
+            previous = sibling;
+        }
+    },
 };
 
 // *************************************************************************************************
@@ -141,4 +192,44 @@ exports.CMD = function(command, self, properties) {
     return new Command(props);
 }
 
+var SEPARATOR =
 exports.CMD.SEPARATOR = {};
+
+// *************************************************************************************************
+
+function expandCommands(menuData, self) {
+    var commands = [];
+    var needSeparator = false;
+    for (var i = 0, l = menuData.length; i < l; ++i) {
+        var name = menuData[i];
+        var children = menuData[i+1];
+        if (children instanceof Array) {
+            if (needSeparator) {
+                commands.push(SEPARATOR);
+                needSeparator = false;
+            }
+            var command = expandCommand(name, children);
+            commands.push(command);
+            ++i;
+        } else if (name == '-') {
+            needSeparator = true;
+        } else  {
+            var command = self.cmd(undefined, name);
+            if (command) {
+                if (needSeparator) {
+                    commands.push(SEPARATOR);
+                    needSeparator = false;
+                }
+                commands.push(command);
+            }
+        }
+    }
+    return commands;
+
+    function expandCommand(name, children) {
+        return CMD(null, self, {
+            title: name,
+            children: children,
+        });
+    }
+}
