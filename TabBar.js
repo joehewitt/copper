@@ -3,6 +3,8 @@ var _ = require('underscore'),
     $ = require('ore'),
     html = require('ore/html');
 
+// *************************************************************************************************
+
 exports.TabBar = html.div('.TabBar', {onclick: '$onClick'}, [],
 {
     defaultTab: null,

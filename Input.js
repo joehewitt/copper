@@ -8,6 +8,8 @@ var KeyMap = require('./KeyManager').KeyMap;
 // *************************************************************************************************
 
 exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
+                                                     onfocus: '$onFocus',
+                                                     onblur: '$onBlur',
                                                      onmousedown: '$onMouseDown'}, [
 ], {
     shouldSnap: false,
@@ -74,6 +76,25 @@ exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
         this.updated(this);
     },
 
+    onFocus: function() {
+        this.onMouseWheel = _.bind(function(event) {
+            if (event.deltaY > 0) {
+                this.incrementNumber(this.increment);
+                event.preventDefault();
+            } else if (event.deltaY < 0) {
+                this.incrementNumber(-this.increment);
+                event.preventDefault();
+            }
+        }, this);
+
+        $(window).listen('mousewheel', this.onMouseWheel, true);
+    },
+
+    onBlur: function() {
+        $(window).unlisten('mousewheel', this.onMouseWheel, true);
+        delete this.onMouseWheel;
+    },
+
     onMouseDown: function(event) {
         if (this.increment !== undefined) {
             var startY = event.clientY;
@@ -99,12 +120,13 @@ exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
                     this.focus();
                 }
                 $(window).unlisten('mousemove', this.onMouseMove, true)
-                         .unlisten('mouseup', this.onMouseUp);
+                         .unlisten('mouseup', this.onMouseUp, true);
+                delete this.onMouseMove;
+                delete this.onMouseUp;
             }, this);
 
             $(window).listen('mousemove', this.onMouseMove, true)
-                     .listen('mouseup', this.onMouseUp);
+                     .listen('mouseup', this.onMouseUp, true);
         }
     },    
 });    
-
