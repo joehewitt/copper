@@ -14,7 +14,7 @@ exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
 ], {
     shouldSnap: false,
     rounding: 100,
-    pixelsPerIncrement: 20,
+    pixelsPerIncrement: 5,
 
     updated: $.event,
 
@@ -119,12 +119,16 @@ exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
                 if (event.target == this.val()) {
                     this.focus();
                 }
+                $(document.body).removeClass('dragging-number');
+                this.removeClass('dragging');
                 $(window).unlisten('mousemove', this.onMouseMove, true)
                          .unlisten('mouseup', this.onMouseUp, true);
                 delete this.onMouseMove;
                 delete this.onMouseUp;
             }, this);
 
+            $(document.body).addClass('dragging-number');
+            this.addClass('dragging');
             $(window).listen('mousemove', this.onMouseMove, true)
                      .listen('mouseup', this.onMouseUp, true);
         }

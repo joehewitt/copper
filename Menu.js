@@ -19,7 +19,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
 [
     List('.menu-root-list', {tabindex: '-1'}, [
         html.HERE,
-    ])
+    ]),
 ], {
     showing: $.event,
     shown: $.event,
@@ -103,33 +103,35 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
         }
 
         var offset = anchorBox.offset();
-        var parentOffset = this.parent().offset();
         
-        var anchorX = offset.left - parentOffset.left;
+        var anchorX = offset.left;
         var width = this.width();
         var right = (offset.left + width) - window.scrollX;
         if (right > window.innerWidth && width < window.innerWidth) {
-            anchorX = ((offset.left+offset.width) - parentOffset.left) - width;
+            anchorX = (offset.left+offset.width) - width;
         }
 
-        var anchorY = (offset.top - parentOffset.top) + offset.height;
+        var anchorY = offset.top + offset.height;
         var height = this.height();
         var bottom = (offset.top + offset.height + height) - window.scrollY;
         if (bottom > window.innerHeight && height < window.innerHeight) {
-            anchorY = (offset.top - parentOffset.top) - height;
+            anchorY = offset.top - height;
         }
 
-        return this.showAt(anchorX, anchorY);
+        var container = anchorBox.closest('.Container');
+        return this.showAt(anchorX, anchorY, container);
     },
 
-    showAt: function(anchorX, anchorY, menuParent) {
+    showAt: function(anchorX, anchorY, container) {
         if (!this.onMouseDown) {
             this.showing({target: this});
         }
 
-        if (menuParent) {
-            menuParent.append(this);
+        this.originalParent = this.parent();
+        if (!container) {
+            container = $(document.body);
         }
+        container.append(this);
 
         var width = this.width();
         if (anchorX+width > window.innerWidth && width < window.innerWidth) {
@@ -197,6 +199,9 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
 
             this.select(null);
 
+            if (this.originalParent) {
+                this.originalParent.append(this);
+            }
             this.hidden({target: this});
         }, this), 100);
     },

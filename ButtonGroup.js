@@ -16,7 +16,7 @@ exports.ButtonGroup = html.div('.button-group', [
     // },
 
     get value() {
-        return this._value;
+        return this.query('.button.selected').value;
     },
 
     set value(value) {
@@ -26,8 +26,6 @@ exports.ButtonGroup = html.div('.button-group', [
                 button.selected = true;
             }
         }, this));
-
-        this._value = value;
 
         this.updated({target: this, value: value});
     },

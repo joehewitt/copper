@@ -29,14 +29,22 @@ exports.Button = html.div('.button', {}, [
     showMenu: function(menu) {
         var menuSelector = this.attr('menu');
         if (menuSelector) {
-            var container = this.closest('.Container');
-            if (!container.length) {
-                container = $(document);
+            var menu;
+            if (menuSelector == 'self') {
+                menu = this.query('.menu', true);
+            } else {
+                var container = this.closest('.Container');
+                if (!container.length) {
+                    container = $(document);
+                }
+                menu = container.query(menuSelector, true);
             }
 
-            var menu = container.query(menuSelector);
-            if (menu.length) {
+            if (menu && menu.length) {
+                this.openedMenu = menu;
+
                 var onHidden = _.bind(function () {
+                    this.openedMenu = null;
                     this.removeClass('depressed');
                     menu.unlisten('hidden', onHidden);
                 }, this);

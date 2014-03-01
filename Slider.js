@@ -43,13 +43,13 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     reset: function() {
         this.value = 0;
         this.buffer = 0;
-        this.update();
+        this.layout();
     },
 
     setValue: function(value) {
         if (!this.dragging && value >= this.min && value <= this.max) {
             this.value = value;
-            this.update();
+            this.layout();
         }
     },
 
@@ -61,14 +61,14 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         if (this.buffer == 1) {
             this.addClass('buffered');
         }
-        this.update();
+        this.layout();
     },
 
     setRange: function(min, max, increment, cb) {
         this.min = min;
         this.max = max;
         this.increment = increment;
-        this._updateTicks(cb);
+        this._layoutTicks(cb);
     },
 
     slideHome: function() {
@@ -91,7 +91,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         this.updated(this);
     },
 
-    update: function() {
+    layout: function() {
         var buffer = $('.buffer', this);
         buffer.css('width', this.buffer * this.width());
         if (!this.dragging) {
@@ -104,7 +104,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
 
     // *********************************************************************************************
 
-    _updateTicks: function(cb) {
+    _layoutTicks: function(cb) {
         this.query('.tickmark').remove();
 
         var thumb = this.query('.thumb');
@@ -157,7 +157,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         }
 
         this.value = value;
-        this.update();
+        this.layout();
         this.updated(this);
     },
 

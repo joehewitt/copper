@@ -57,7 +57,7 @@ exports.Container = html.div('.Container', {onmousedown: '$onMouseDown', onclick
                         menu.remove();
                     });
                     menu.populate(commands);
-                    menu.showAt(event.pageX, event.pageY, this);
+                    menu.showAt(event.pageX, event.pageY ,this);
                 }
 
                 event.stopPropagation();
