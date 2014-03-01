@@ -140,18 +140,26 @@ exports.CommandMap.prototype = {
 
     match: function(pattern) {
         var matches = [];
-        if (this.nextMap) {
-            matches = matches.concat(this.nextMap.match(pattern));
-        }
+        matchMap(this);
+        matches.sort(function(a,b) { return a.index > b.index ? 1 : -1; });
+        return _.map(matches, function(m) { return m.command; });
 
-        for (var name in this.map) {
-            var command = this.map[name];
-            var title = command.title;
-            if (title && pattern.exec(title)) {
-                matches.push(command);
+        function matchMap(map) {
+            if (map.nextMap) {
+                matchMap(map.nextMap);
+            }
+    
+            for (var name in map.map) {
+                var command = map.map[name];
+                var title = command.title;
+                if (title) {
+                    var m = pattern.exec(title);
+                    if (m) {
+                        matches.push({index: m.index, command: command});
+                    }
+                }
             }
         }
-        return matches;
     },
 
     add: function(map) {

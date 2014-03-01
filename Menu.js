@@ -193,12 +193,9 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
                 this.val().blur();
             }
 
-            var selected = this.query('.menu-item.selected');
-            if (selected.length) {
-                selected.removeClass('selected');
-            }
-
             this.removeClass('fade').removeClass('visible');
+
+            this.select(null);
 
             this.hidden({target: this});
         }, this), 100);

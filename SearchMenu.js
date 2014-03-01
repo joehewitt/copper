@@ -1,21 +1,17 @@
 
-var $ = require('ore'),
-    _ = require('underscore'),
+var _ = require('underscore'),
+    $ = require('ore'),
     html = require('ore/html'),
     KeyMap = require('copper/KeyManager').KeyMap,
     BINDKEY = require('copper/KeyManager').BINDKEY,
-    Command = require('copper/Command').Command,
-    CMD = require('copper/Command').CMD,
-    CommandMap  = require('copper/Command').CommandMap,
-    NavigationBar = require('copper/Navigator').NavigationBar,
     List = require('copper/List').List,
+    Menu = require('copper/Menu').Menu,
     MenuItem = require('copper/Menu').MenuItem,
-    MenuSeparator = require('copper/Menu').MenuSeparator,
-    Menu = require('copper/Menu').Menu;
+    MenuSeparator = require('copper/Menu').MenuSeparator;
 
 // *************************************************************************************************
 
-exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing', onhidden: '$onMenuHidden',
+exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
                                            onshown: '$onMenuShown', onpushed: '$onPushed',
                                            onnavigated: '$onNavigated'}, [
 ], {
@@ -48,7 +44,6 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing', onhidden
 
     construct: function() {
         this.commands = [];
-        this.resultStack = [];
 
         var inputBox = new SearchMenuInputBox();
         this.input = inputBox.query('.search-menu-input');
@@ -63,14 +58,11 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing', onhidden
 
     // ---------------------------------------------------------------------------------------------
 
-    activate: function(commands) {
+    activate: function() {
         this.value = '';
-        this.resultStack = [];
         this.popPage(true, true);
 
-        if (commands) {
-            this.pushResults(commands, null, true);
-        } else if (this.defaultCommand) {
+        if (this.defaultCommand) {
             this.empty();
             this.populate(this.defaultCommand.children);
         }
@@ -83,14 +75,13 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing', onhidden
         if (text.length) {
             var pattern = new RegExp(text.split('').join('.*?') + '.*?', 'i');
 
-            var searchSet = this.searchCommands ? this.searchCommands : this.commands;
-            for (var i = 0, l = searchSet.length; i < l; ++i) {
-                var commands = searchSet[i];
+            for (var i = 0, l = this.commands.length; i < l; ++i) {
+                var commands = this.commands[i];
                 var matches = commands.match(pattern);
                 newCommands = newCommands.concat(matches);
             }
 
-            this.replaceResults(newCommands);
+            this.showResults(newCommands);
             this.updateHotKeys(this.list);
         } else if (this.defaultCommand) {
             this.empty();
@@ -118,43 +109,6 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing', onhidden
         }
     },
 
-    replaceResults: function(commands) {
-        if (this.resultStack.length) {
-            this.resultStack[this.resultStack.length-1] = {commands: commands};
-        } else {
-            this.resultStack.push({commands: commands});
-        }
-        this.showResults(commands);
-    },
-
-    pushResults: function(commands, selectedCommand, isNewSearch) {
-        if (this.resultStack.length) {
-            this.resultStack[this.resultStack.length-1].selected = selectedCommand;
-        }
-        this.resultStack.push({commands: commands, isNewSearch: isNewSearch});
-        if (isNewSearch) {
-            this.searchCommands = [commands];
-        } else {
-            this.searchCommands = null;
-        }
-        this.showResults(commands);
-    },
-
-    popResults: function() {        
-        if (this.resultStack.length >= 2) {
-            this.resultStack.pop();
-            if (this.resultStack.length) {
-                var info = this.resultStack[this.resultStack.length-1];
-                if (info.isNewSearch) {
-                    this.searchCommands = [info.commands];
-                } else {
-                    this.searchCommands = null;
-                }
-                this.showResults(info.commands, info.selected);
-            }
-        }
-    },
-
     showResults: function(commands, selectedCommand) {
         this.empty();
         this.populate(commands, selectedCommand, true);
@@ -163,18 +117,6 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing', onhidden
             if (firstItem.length) {
                 this.list.select(firstItem);
             }
-        }
-    },
-
-    hover: function(command) {
-        if (this.hoveredCommand) {
-            this.hoveredCommand.hover(false);
-        }
-        if (command) {
-            this.hoveredCommand = command;
-            command.hover(true);
-        } else {
-            this.hoveredCommand = null;
         }
     },
 
@@ -212,13 +154,6 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing', onhidden
     onMenuShown: function() {
         this.input.focus();
     },
-
-    onMenuHidden: function() {
-        this.hover();
-
-        this.searchCommands = null;
-        this.resultStack = [];
-    },
 });    
 
 // *************************************************************************************************
@@ -226,4 +161,3 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing', onhidden
 var SearchMenuInputBox = html.div('.search-menu-input-box', {}, [
     html.input('.search-menu-input', {}),
 ]);
-
