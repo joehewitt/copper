@@ -10,10 +10,10 @@ var Button = require('./Button').Button,
 // *************************************************************************************************
 
 exports.Dropdown = Button('.dropdown', {menu: 'self'}, [
-    html.div('.dropdown-title'),
-    Menu('.dropdown-menu', {oncommanded: '$onMenuCommanded'}, [
+    html.div('.dropdown-title', [
         html.HERE,
     ]),
+    Menu('.dropdown-menu', {oncommanded: '$onMenuCommanded'}),
 ], {
     updated: $.event,
     
