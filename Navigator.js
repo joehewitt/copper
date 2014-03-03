@@ -26,6 +26,24 @@ exports.Navigator = html.div('.navigator', {}, [
     
     // ---------------------------------------------------------------------------------------------
 
+    construct: function() {
+        var startPage = this.query('.navigator-page', true);
+        if (startPage.length) {
+            var header;
+            var title = startPage.attr('title');
+            if (title) {
+                header = new exports.NavigationBar();
+                header.addClass('navigator-header');
+                header.html(title);
+                this.query('.navigator-header-box').append(header);
+            }
+
+            this.stack = [{page: startPage, header: header}];
+        }
+    },
+
+    // ---------------------------------------------------------------------------------------------
+
     replacePage: function(page, header) {
         var newItem = {page: page, header: header};
         if (!this.stack) {
@@ -41,47 +59,64 @@ exports.Navigator = html.div('.navigator', {}, [
         this.query('.navigator-page-box').append(page);
     },
 
-    pushPage: function(page, header) {
-        var oldItem = this.stack ? this.stack[this.stack.length-1] : null
-
-        if (!this.stack) {
-            this.stack = [];
-        }
-
+    pushPage: function(page, header, notAnimated) {
         if (typeof(header) == 'string') {
             var bar = new exports.NavigationBar();
             bar.html(header);
             header = bar;
         }
-        this.stack.push({page: page, header: header});
 
-        this.navigating({target: this, page: page, header: header});
+        var oldItem = this.stack ? this.stack[this.stack.length-1] : null
+        if (!this.stack) {
+            this.stack = [];
+        }
+        
+        var event = {target: this, page: page, header: header};
+        this.navigating(event);
+        if (event.prevent) {
+            return;
+        }
+
+        this.stack.push({page: page, header: header});
 
         header.addClass('navigator-header');
         page.addClass('navigator-page');
 
-        if (oldItem) {
-            oldItem.header.addClass('fading-out');
-            oldItem.page.addClass('sliding-out');
+        // Save the page position before we append the new page (which might change it)
+        var pos = oldItem ? oldItem.page.position() : null;
 
+        this.query('.navigator-header-box').append(header);
+        this.query('.navigator-page-box').append(page);
+
+        if (oldItem) {
+            // Affix the position of the page so it doesn't jump just before the animation
+            var headerOffset = oldItem.header ? 0 : (header ? header.height() : 0);
+            oldItem.page.css('width', pos.width)
+                        .css('height', pos.height)
+                        .css('top', pos.top - headerOffset);
+
+            if (oldItem.header) {
+                oldItem.header.addClass('fading-out');                
+            }
+            oldItem.page.addClass('sliding-out');
             header.addClass('fading-in');
             page.addClass('sliding-in');
 
             document.addEventListener('webkitAnimationEnd', endTransition, false);
         }
 
-        this.query('.navigator-header-box').append(header);
-        this.query('.navigator-page-box').append(page);
-        this.query('.navigator-page-box').css('height', page.height());
-
         var self = this;
         function endTransition(event) {
             if (event.animationName == 'navigator-slide-in') {
+                if (oldItem.header) {
+                    oldItem.header.removeClass('fading-out').addClass('hidden');
+                }
                 oldItem.page.removeClass('sliding-out').addClass('hidden');
                 page.removeClass('sliding-in');
-                oldItem.header.removeClass('fading-out').addClass('hidden');
                 header.removeClass('fading-in');
-                self.query('.navigator-page-box').css('height', null);
+
+                // Let the page resume its natural position now
+                oldItem.page.css('width', null).css('height', null).css('top', null);
 
                 document.removeEventListener('webkitAnimationEnd', endTransition, false);
 
@@ -95,53 +130,75 @@ exports.Navigator = html.div('.navigator', {}, [
             return;
         }
 
-        var deadItem = this.stack.pop();
+        var deadItem = this.stack[this.stack.length-1];
+        var returningItem = returnToBeginning ? this.stack[0] : this.stack[this.stack.length-2];
+        var page = returningItem.page;
+        var header = returningItem.header;
+
+        var event = {target: this, page: page, header: header, back: true};
+        this.navigating(event);
+        if (event.prevent) {
+            return;
+        }
+
         if (returnToBeginning) {
-            for (var i = this.stack.length-1; i > 0; --i) {
+            for (var i = this.stack.length-2; i > 0; --i) {
                 var item = this.stack[i];
                 item.header.remove();
                 item.page.remove();
             }
             this.stack = this.stack.slice(0, 1);
+        } else {
+            this.stack.pop();
         }
-        var returningItem = this.stack[this.stack.length-1];
 
-        this.navigating({target: this, page: returningItem.page, header: returningItem.header,
-                         back: true});
+        // Save the page position before we show the returning page (which might change it)
+        var pos = deadItem.page.position();
+
+        if (header) {
+            header.removeClass('hidden');
+        }
+        page.removeClass('hidden');
 
         if (!notAnimated) {
+            var headerOffset = header ? 0 : (deadItem.header ? deadItem.header.height() : 0);
+            deadItem.page.css('width', pos.width)
+                         .css('height', pos.height)
+                         .css('top', pos.top + headerOffset);
+
             deadItem.header.addClass('fading-out');
             deadItem.page.addClass('sliding-back-out');
-            returningItem.header.addClass('fading-in');
-            returningItem.page.addClass('sliding-back-in');
+            if (header) {
+                header.addClass('fading-in');
+            }
+            page.addClass('sliding-back-in');
         } else {
             deadItem.header.remove();
             deadItem.page.remove();            
         }
 
-        returningItem.header.removeClass('hidden');
-        returningItem.page.removeClass('hidden');
-
         if (notAnimated) {
-            this.navigated({target: this});            
+            this.navigated({target: this, poppedPage: deadItem.page, back: true});
         } else {
-            this.query('.navigator-page-box').css('height', returningItem.page.height());
             document.addEventListener('webkitAnimationEnd', endTransition, false);
         }
 
         var self = this;
         function endTransition(event) {
             if (event.animationName == 'navigator-slide-back-in') {
-                returningItem.header.removeClass('fading-in');
-                returningItem.page.removeClass('sliding-back-in');
-                self.query('.navigator-page-box').css('height', null);
+                if (header) {
+                    header.removeClass('fading-in');
+                }
+                page.removeClass('sliding-back-in');
+
+                deadItem.page.css('width', null).css('height', null).css('top', null);
 
                 deadItem.header.remove();
                 deadItem.page.remove();
 
                 document.removeEventListener('webkitAnimationEnd', endTransition, false);
 
-                self.navigated({target: self, back: true});
+                self.navigated({target: self, poppedPage: deadItem.page, back: true});
             }
         }
     },
@@ -171,6 +228,6 @@ exports.Navigator = html.div('.navigator', {}, [
 });
 
 exports.NavigationBar = html.div('.navigation-bar', {}, [
-    Button('.navigation-back-button.back-button', ['<']),
+    Button('.navigation-back-button.back-button'),
     html.div('.navigation-bar-title', {}, [html.HERE]),
 ]);

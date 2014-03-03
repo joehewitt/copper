@@ -138,7 +138,7 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
         }
     },
 
-    onNavigated: function() {
+    onNavigated: function(event) {
         var page = this.currentPage;
         if (page == this.list) {
             this.input.focus();
@@ -147,11 +147,11 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
         }
     },
 
-    onMenuShowing: function() {
+    onMenuShowing: function(event) {
         this.activate();
     },
 
-    onMenuShown: function() {
+    onMenuShown: function(event) {
         this.input.focus();
     },
 });    

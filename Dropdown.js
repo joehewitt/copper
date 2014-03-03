@@ -40,10 +40,15 @@ exports.Dropdown = Button('.dropdown', {menu: 'self'}, [
         item = this.menu.query('.menu-item[value="' + escapeValue(value) + '"]');
         if (item.length) {
             item.addClass('checked');
-            this.query('.dropdown-title', true).html(item.html())
+            this.updateTitle(item);
         } 
 
         return value;
+    },
+    
+    updateTitle: function(item) {
+        var caption = item.attr('caption');
+        this.query('.dropdown-title', true).html(caption);
     },
 
     // ---------------------------------------------------------------------------------------------

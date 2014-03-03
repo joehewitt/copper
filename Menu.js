@@ -21,9 +21,9 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
         html.HERE,
     ]),
 ], {
-    showing: $.event,
-    shown: $.event,
-    hidden: $.event,
+    showing: $.event.dom('showing', true),
+    shown: $.event.dom('shown', true),
+    hidden: $.event.dom('hidden', true),
 
     get visible() {
         return this.cssClass('visible');
@@ -92,12 +92,6 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
     },
 
     show: function(anchorBox) {
-        if (!this.onMouseDown) {
-            this.showing({target: this});
-        }
-
-        this.updateHotKeys(this.list);
-
         if (!this.parent().length) {
             anchorBox.parent().append(this);
         }
@@ -126,6 +120,8 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
         if (!this.onMouseDown) {
             this.showing({target: this});
         }
+
+        this.updateHotKeys(this.list);
 
         this.originalParent = this.parent();
         if (!container) {
@@ -162,7 +158,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
             }, this);
             this.onWindowBlur = _.bind(function(event) {
                 if (event.target == window) {
-                    this.hide();
+                    // this.hide();
                 }
             }, this);
             $(window).listen('mousedown', this.onMouseDown, true)
@@ -200,7 +196,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
             this.select(null);
 
             if (this.originalParent) {
-                this.originalParent.append(this);
+                this.originalParent.append(this, true);
             }
             this.hidden({target: this});
         }, this), 100);
