@@ -3,7 +3,163 @@ var _ = require('underscore');
 
 // *************************************************************************************************
 
-function Command(properties) {
+exports.CommandManager = function(container) {
+    this.history = [];
+    this.historyCursor = -1;
+}
+
+exports.CommandManager.prototype = {
+    get canUndo() {
+        return this.historyCursor >= 0;
+    },
+
+    get canRedo() {
+        return this.historyCursor < this.history.length-1;
+    },
+
+    get nextUndoCommand() {
+        return this.historyCursor >= 0 ? this.history[this.historyCursor].command : null;
+    },
+
+    get nextRedoCommand() {
+        return this.historyCursor < this.history.length-1
+            ? this.history[this.historyCursor+1].command : null;
+    },
+
+    // ---------------------------------------------------------------------------------------------
+
+    undoCommand: function() {
+        var state = this.history[this.historyCursor--];
+        // D&&D('undo', this.historyCursor, state.command.title);
+        state.command.undo(state.undo);
+    },
+
+    redoCommand: function() {
+        var state = this.history[++this.historyCursor];
+        // D&&D('redo', this.historyCursor, state.command.title);
+        state.command.redo(state.redo);
+    },
+
+    pushState: function(state) {
+        if (!this.history) {
+            this.history = [state];
+            this.historyCursor = 0;
+        } else {
+            if (this.historyCursor == -1) {
+                this.history = [];
+            } else if (this.historyCursor < this.history.length-1) {
+                this.history = this.history.slice(this.historyCursor+1);
+            } 
+            this.history.push(state);
+            this.historyCursor = this.history.length-1;
+        }
+        // D&&D('do', this.historyCursor, state.command.title);
+    },
+};
+
+// *************************************************************************************************
+
+exports.CommandMap = function(self, manager, definitions) {
+    this.manager = manager;
+
+    var map = this.map = {};
+    var conditionMap = this.conditionMap = {};
+
+    for (var commandName in definitions) {
+        var definition = definitions[commandName];
+        var implementation = self[commandName];
+
+        var command = CMD(implementation, self, definition);
+        command.id = commandName;
+        command.manager = manager;
+        map[commandName] = command
+        
+        if (command.hasUndo) {
+            self[commandName] = wrapUndoable(command);
+        }
+
+        var conditionId = command.conditionId;
+        if (conditionId) {
+            if (conditionId in conditionMap) {
+                conditionMap[conditionId].commands.push(command)
+            } else {
+                conditionMap[conditionId] = {validate: command._validate, commands: [command]};
+            }
+        }
+    }
+};
+
+function wrapUndoable(command) {
+    return function() {
+        command.execute.apply(command, arguments);
+    }
+}
+
+exports.CommandMap.prototype = {
+    find: function(name) {
+        var found = this.nextMap ? this.nextMap.find(name) : null;
+        if (!found && name in this.map) {
+            found = this.map[name]
+        }
+        return found;
+    },
+
+    match: function(pattern) {
+        var matches = [];
+        matchMap(this);
+        matches.sort(function(a,b) { return a.index > b.index ? 1 : -1; });
+        return _.map(matches, function(m) { return m.command; });
+
+        function matchMap(map) {
+            if (map.nextMap) {
+                matchMap(map.nextMap);
+            }
+    
+            for (var name in map.map) {
+                var command = map.map[name];
+                var title = command.title;
+                if (title) {
+                    var m = pattern.exec(title);
+                    if (m) {
+                        matches.push({index: m.index, command: command});
+                    }
+                }
+            }
+        }
+    },
+
+    add: function(map) {
+        if (this.lastMap) {
+            this.lastMap.nextMap = map;
+        } else {
+            this.nextMap = this.lastMap = map;
+        }
+        this.lastMap = map;
+    },
+
+    remove: function(map) {
+        var previous;
+        for (var sibling = this.nextMap; sibling; sibling = sibling.nextMap) {
+            if (sibling == map) {
+                if (previous) {
+                    previous.nextMap = sibling.nextMap;
+                } else {
+                    this.nextMap = sibling.nextMap;
+                }
+                if (this.lastMap == map) {
+                    this.lastMap = previous;
+                }
+            }
+            previous = sibling;
+        }
+    },
+};
+
+
+// *************************************************************************************************
+
+var Command = 
+exports.Command = function(properties) {
     this._title = properties.title;
     this._value = properties.value;
     this._className = properties.className;
@@ -31,8 +187,6 @@ function Command(properties) {
         this._validate = properties.validate;
     }
 }
-
-exports.Command = Command;
 
 Command.prototype = {
     get value() { 
@@ -95,7 +249,7 @@ Command.prototype = {
         if (this.hasUndo) {
             var state = this._save.apply(this.self, arguments);
             state.command = this;
-            this.container.pushHistory(state);
+            this.manager.pushState(state);
 
             this._redo.apply(this.self, state.redo);
         } else if (this._execute) {
@@ -127,94 +281,6 @@ Command.prototype = {
             return this._copy.apply(this.self, [doubleTap]);
         }
     }    
-}
-
-// *************************************************************************************************
-
-exports.CommandMap = function(self, container, definitions) {
-    this.container = container;
-
-    var map = this.map = {};
-    var conditionMap = this.conditionMap = {};
-
-    for (var commandName in definitions) {
-        var definition = definitions[commandName];
-        var implementation = self[commandName];
-
-        var command = CMD(implementation, self, definition);
-        command.id = commandName;
-        command.container = container;
-        map[commandName] = command
-
-        var conditionId = command.conditionId;
-        if (conditionId) {
-            if (conditionId in conditionMap) {
-                conditionMap[conditionId].commands.push(command)
-            } else {
-                conditionMap[conditionId] = {validate: command._validate, commands: [command]};
-            }
-        }
-    }
-}
-
-exports.CommandMap.prototype = {
-    find: function(name) {
-        var found = this.nextMap ? this.nextMap.find(name) : null;
-        if (!found && name in this.map) {
-            found = this.map[name]
-        }
-        return found;
-    },
-
-    match: function(pattern) {
-        var matches = [];
-        matchMap(this);
-        matches.sort(function(a,b) { return a.index > b.index ? 1 : -1; });
-        return _.map(matches, function(m) { return m.command; });
-
-        function matchMap(map) {
-            if (map.nextMap) {
-                matchMap(map.nextMap);
-            }
-    
-            for (var name in map.map) {
-                var command = map.map[name];
-                var title = command.title;
-                if (title) {
-                    var m = pattern.exec(title);
-                    if (m) {
-                        matches.push({index: m.index, command: command});
-                    }
-                }
-            }
-        }
-    },
-
-    add: function(map) {
-        if (this.lastMap) {
-            this.lastMap.nextMap = map;
-        } else {
-            this.nextMap = this.lastMap = map;
-        }
-        this.lastMap = map;
-    },
-
-    remove: function(map) {
-        var previous;
-        for (var sibling = this.nextMap; sibling; sibling = sibling.nextMap) {
-            if (sibling == map) {
-                if (previous) {
-                    previous.nextMap = sibling.nextMap;
-                } else {
-                    this.nextMap = sibling.nextMap;
-                }
-                if (this.lastMap == map) {
-                    this.lastMap = previous;
-                }
-            }
-            previous = sibling;
-        }
-    },
 };
 
 // *************************************************************************************************

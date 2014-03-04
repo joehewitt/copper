@@ -10,7 +10,7 @@ var KeyMap = require('./KeyManager').KeyMap,
     ListItem = require('./List').ListItem,
     ListSeparator = require('./List').ListSeparator,
     NumericInput = require('./Input').NumericInput,
-    CMD = require('./Command').CMD;
+    CMD = require('./CommandManager').CMD;
 
 // *************************************************************************************************
 

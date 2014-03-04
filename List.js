@@ -5,7 +5,7 @@ var _ = require('underscore'),
 
 var KeyMap = require('./KeyManager').KeyMap,
     BINDKEY = require('./KeyManager').BINDKEY,
-    CMD = require('./Command').CMD;
+    CMD = require('./CommandManager').CMD;
 
 // *************************************************************************************************
 

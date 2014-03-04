@@ -2,7 +2,7 @@
 var _ = require('underscore'),
     $ = require('ore');
 
-var Command = require('./Command').Command;
+var Command = require('./CommandManager').Command;
 
 // *************************************************************************************************
 
