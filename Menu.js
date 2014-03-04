@@ -112,7 +112,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
             anchorY = offset.top - height;
         }
 
-        var container = anchorBox.closest('.Container');
+        var container = anchorBox.closest('.container');
         return this.showAt(anchorX, anchorY, container);
     },
 

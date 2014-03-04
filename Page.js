@@ -5,7 +5,7 @@ var $ = require('ore'),
     routes = require('ore/routes'),
     Container = require('./Container').Container;
 
-exports.Page = Container('.Page', {}, [],
+exports.Page = Container('.page', {}, [],
 {
     ready: function(constructor) {
         _.each(this.routes, _.bind(function(callback, pattern) {

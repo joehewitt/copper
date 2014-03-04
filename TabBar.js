@@ -5,7 +5,7 @@ var _ = require('underscore'),
 
 // *************************************************************************************************
 
-exports.TabBar = html.div('.TabBar', {onclick: '$onClick'}, [],
+exports.TabBar = html.div('.tab-bar', {onclick: '$onClick'}, [],
 {
     defaultTab: null,
 
@@ -17,17 +17,17 @@ exports.TabBar = html.div('.TabBar', {onclick: '$onClick'}, [],
     construct: function() {
         setTimeout(_.bind(function() {
             if (this.defaultTab) {
-                this.query('.Tab').each(_.bind(function(tab) {
+                this.query('.tab').each(_.bind(function(tab) {
                     if (tab.attr('href') == this.defaultTab) {
                         tab.select();
                     }
                 }, this));
             } else {
-                var defaultTab = this.query('.Tab.selected');
+                var defaultTab = this.query('.tab.selected');
                 if (defaultTab.length == 1) {
                    defaultTab.select();
                 } else {
-                    var defaultTab = this.query('.Tab');
+                    var defaultTab = this.query('.tab');
                     if (defaultTab.length) {
                        defaultTab.get(0).select();
                     }
@@ -43,9 +43,9 @@ exports.TabBar = html.div('.TabBar', {onclick: '$onClick'}, [],
     set value(value) {
         this._value = value;
 
-        this.query('.Tab.selected').removeClass('selected');
+        this.query('.tab.selected').removeClass('selected');
         
-        var selectedTab = this.query('.Tab[value="' + value + '"]');
+        var selectedTab = this.query('.tab[value="' + value + '"]');
         if (selectedTab.length) {
             selectedTab.addClass('selected');
 
@@ -76,14 +76,14 @@ exports.TabBar = html.div('.TabBar', {onclick: '$onClick'}, [],
     // *************************************************************************************************
 
     onClick: function(event) {
-        var tab = $(event.target).closest('.Tab');
+        var tab = $(event.target).closest('.tab');
         if (tab.length) {
             this.value = tab.attr('value');
         }
     },
 });
 
-exports.Tab = html.a('.Tab', {type: 'replace'}, [],
+exports.Tab = html.a('.tab', {type: 'replace'}, [],
 {
     get selected() {
         return this.cssClass('selected');

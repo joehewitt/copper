@@ -33,7 +33,7 @@ exports.Button = html.div('.button', {}, [
             if (menuSelector == 'self') {
                 menu = this.query('.menu', true);
             } else {
-                var container = this.closest('.Container');
+                var container = this.closest('.container');
                 if (!container.length) {
                     container = $(document);
                 }
@@ -59,7 +59,7 @@ exports.Button = html.div('.button', {}, [
 
 // *************************************************************************************************
 
-exports.Checkbox = html.input('.Checkbox', {type: 'checkbox'}, [
+exports.Checkbox = html.input('.checkbox', {type: 'checkbox'}, [
 ], {
     value: null,
 

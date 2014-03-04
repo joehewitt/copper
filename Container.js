@@ -6,7 +6,7 @@ var Menu = require('./Menu').Menu;
 
 // *************************************************************************************************
 
-exports.Container = html.div('.Container', {onmousedown: '$onMouseDown', onclick: '$onClick',
+exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick: '$onClick',
                                             oncontextmenu: '$onContextMenu'}, [],
 {
     onMouseDown: function(event) {

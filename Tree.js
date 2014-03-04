@@ -5,8 +5,8 @@ var _ = require('underscore'),
 
 // *************************************************************************************************
 
-exports.Tree = html.div('.Tree', {onmousedown: '$onMouseDown'}, [
-    html.div('.TreeContainer.vertical', [
+exports.Tree = html.div('.tree', {onmousedown: '$onMouseDown'}, [
+    html.div('.tree-container.vertical', [
         html.HERE
     ])
 ],
@@ -16,7 +16,7 @@ exports.Tree = html.div('.Tree', {onmousedown: '$onMouseDown'}, [
     selectitem: $.event,
 
     onMouseDown: function(event) {
-        var item = $(event.target).closest('.TreeItem');
+        var item = $(event.target).closest('.tree-item');
         if (event.metaKey && !event.shiftKey && !event.altKey && !event.ctrlKey) {
             this.toggleItem(item);
             event.preventDefault();
@@ -62,7 +62,7 @@ exports.Tree = html.div('.Tree', {onmousedown: '$onMouseDown'}, [
         } else {
             var endItem = this.selectedItems.get(this.selectedItems.length-1);
             var searchDown = false, searchUp = false;
-            this.query('.TreeItem').find(_.bind(function(searchItem) {
+            this.query('.tree-item').find(_.bind(function(searchItem) {
                 if (!searchUp && searchItem.equals(item)) {
                     searchDown = true;
                 } else if (!searchDown && searchItem.equals(endItem)) {
@@ -86,4 +86,4 @@ exports.Tree = html.div('.Tree', {onmousedown: '$onMouseDown'}, [
     },
 });
 
-exports.TreeItem = html.a('.TreeItem');
+exports.TreeItem = html.a('.tree-item');
