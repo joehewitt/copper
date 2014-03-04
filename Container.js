@@ -9,6 +9,61 @@ var Menu = require('./Menu').Menu;
 exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick: '$onClick',
                                             oncontextmenu: '$onContextMenu'}, [],
 {
+    get canUndo() {
+        return this.history && this.historyCursor >= 0;
+    },
+
+    get canRedo() {
+        return this.history && this.historyCursor < this.history.length-1;
+    },
+
+    get nextUndoCommand() {
+        return this.canUndo ? this.history[this.historyCursor].command : null;
+    },
+
+    get nextRedoCommand() {
+        return this.canRedo ? this.history[this.historyCursor+1].command : null;
+    },
+
+    // ---------------------------------------------------------------------------------------------
+
+    doCommand: function(commandName, args) {
+        var command = this.cmd(undefined, commandName);
+        if (command) {
+            command.execute.apply(command, args);
+        }
+    },
+
+    undoCommand: function() {
+        var state = this.history[this.historyCursor--];
+        // D&&D('undo', this.historyCursor, state.command.title);
+        state.command.undo(state.undo);
+    },
+
+    redoCommand: function() {
+        var state = this.history[++this.historyCursor];
+        // D&&D('redo', this.historyCursor, state.command.title);
+        state.command.redo(state.redo);
+    },
+
+    pushHistory: function(state) {
+        if (!this.history) {
+            this.history = [state];
+            this.historyCursor = 0;
+        } else {
+            if (this.historyCursor == -1) {
+                this.history = [];
+            } else if (this.historyCursor < this.history.length-1) {
+                this.history = this.history.slice(this.historyCursor+1);
+            } 
+            this.history.push(state);
+            this.historyCursor = this.history.length-1;
+        }
+        D&&D('do', this.historyCursor, state.command.title);
+    },
+
+    // ---------------------------------------------------------------------------------------------
+
     onMouseDown: function(event) {
         var button = $(event.target).closest('.button');
         if (button.length && !button.cssClass('disabled')) {
@@ -33,7 +88,7 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
                 } else {             
                     var command = button.cmd();
                     if (command) {
-                        command.command(event);
+                        command.execute(event);
                     }
                 }
             }

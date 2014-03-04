@@ -176,15 +176,19 @@ exports.KeyManager.prototype = {
     // ---------------------------------------------------------------------------------------------
 
     get _activeKeyMaps() {
-        var allKeyMaps = this.focusedKeyMaps
-            ? [].concat(this.focusedKeyMaps)
-            : [];
-
-        var keyMaps = this.keyMaps;
+        var keyMaps = [];
         for (var i = keyMaps.length-1; i >= 0; --i) {
-            allKeyMaps.push(keyMaps[i]);
+            var keyMap = keyMaps[i];
+            for (var sibling = keyMap.lastSibling; sibling; sibling = sibling.previousSibling) {
+                keyMaps.push(sibling);
+            }
+            keyMaps.push(keyMap);
         }
-        return allKeyMaps;
+        if (this.focusedKeyMaps) {
+            keyMaps = keyMaps.concat(this.focusedKeyMaps);
+        }
+
+        return keyMaps;
     },
 
     get _modeKeysDown() {
@@ -214,7 +218,7 @@ exports.KeyManager.prototype = {
     },
     
     _processKeyMap: function(keyMap, event, keyCode, shift, meta, alt, ctrl, up) {
-        if (keyMap.processSequenceKey(event, this.keysDown)) {
+        if (!shift && !meta && !alt && !ctrl && keyMap.processSequenceKey(event, this.keysDown)) {
             return true;
         } else {
             var result = keyMap.processComboKey(event, keyCode, shift, meta, alt, ctrl, up);
@@ -283,6 +287,28 @@ exports.KeyMap = function(source) {
 }
 
 exports.KeyMap.prototype = {
+    add: function(keyMap) {
+        if (this.lastSibling) {
+            keyMap.previousSibling = this.lastSibling;
+        }
+        this.lastSibling = keyMap
+    },
+
+    remove: function(keyMap) {
+        var before;
+        for (var map = this.lastSibling; map; map = map.previousSibling) {
+            if (map == keyMap) {
+                if (before) {
+                    before.previousSibling = map.previousSibling;
+                } else {
+                    this.lastSibling = map.previousSibling;
+                }
+                break;
+            }
+            before = map;
+        }
+    },
+
     processSequenceKey: function(event, keyCodes, forceDefault) {
         var map = this.sequenceMap;
         for (var i = 0, l = keyCodes.length; i < l; ++i) {
@@ -535,7 +561,9 @@ function identifyKey(name) {
 function wrapHandler(handler) {
     if (handler instanceof Command) {
         return function(event) {
-            return handler.command.apply(handler, arguments);
+            if (handler.validate()) {
+                return handler.execute.apply(handler, arguments);
+            }
         }
     } else {
         return function(event) {

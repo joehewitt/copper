@@ -5,17 +5,22 @@ var _ = require('underscore');
 
 function Command(properties) {
     this._title = properties.title;
+    this._value = properties.value;
     this._className = properties.className;
-    this._command = properties.command;
+
+    this._execute = properties.execute;
+    this._redo = properties.redo;
+    this._undo = properties.undo;
+    this._save = properties.save;
     this._children = properties.children;
     this._actions = properties.actions;
-    this._value = properties.value;
+    
     this._hover = properties.hover;
-    this._caption = properties.caption;
     this._copy = properties.copy;
-    this.hasCommand = properties.command || false;
-    this.hasChildren = properties.children || false;
-    this.hasHover = properties.hover || false;
+
+    this.hasUndo = !!properties.undo || !!properties.redo;
+    this.hasChildren = !!properties.children;
+    this.hasHover = !!properties.hover;
     this.self = properties.self || this;
 
     if (typeof(properties.validate) == 'string') {
@@ -86,9 +91,28 @@ Command.prototype = {
         }
     },    
 
-    command: function() { 
-        if (this._command) {
-            return this._command.apply(this.self, arguments);
+    execute: function() { 
+        if (this.hasUndo) {
+            var state = this._save.apply(this.self, arguments);
+            state.command = this;
+            this.container.pushHistory(state);
+
+            this._redo.apply(this.self, state.redo);
+        } else if (this._execute) {
+            return this._execute.apply(this.self, arguments);
+        }
+    },
+
+    undo: function(state) {
+        if (this.hasUndo) {
+            var doer = this._undo || this._redo;
+            doer.apply(this.self, state);
+        }
+    },
+
+    redo: function(state) {
+        if (this.hasUndo) {
+            this._redo.apply(this.self, state);
         }
     },
 
@@ -107,17 +131,19 @@ Command.prototype = {
 
 // *************************************************************************************************
 
-exports.CommandMap = function(self, definitions) {
+exports.CommandMap = function(self, container, definitions) {
+    this.container = container;
+
     var map = this.map = {};
     var conditionMap = this.conditionMap = {};
 
     for (var commandName in definitions) {
         var definition = definitions[commandName];
-        var fn = self[commandName];
-        
-        var command = CMD(fn, self, definition);
-        command.id = commandName;
+        var implementation = self[commandName];
 
+        var command = CMD(implementation, self, definition);
+        command.id = commandName;
+        command.container = container;
         map[commandName] = command
 
         var conditionId = command.conditionId;
@@ -194,11 +220,17 @@ exports.CommandMap.prototype = {
 // *************************************************************************************************
 
 var CMD =
-exports.CMD = function(command, self, properties) {
-    var props = {command: command, self: self};
+exports.CMD = function(implementation, self, properties) {
+    var props = {self: self};
     if (properties) {
         props = _.extend(props, properties);
+    }        
+    if (typeof(implementation) == 'function') {
+        props.execute = implementation;
+    } else {
+        props = _.extend(props, implementation);
     }
+
     return new Command(props);
 }
 
