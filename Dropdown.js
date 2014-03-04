@@ -17,16 +17,10 @@ exports.Dropdown = Button('.dropdown', {menu: 'self'}, [
 ], {
     updated: $.event,
     
-    get menu() {
-        return this.openedMenu || this.query('.dropdown-menu', true);
-    },
-
+    // ---------------------------------------------------------------------------------------------
+    
     get value() {
         return this._value;
-    },
-
-    get selectedItem() {
-        return this.menu.query('.menu-item.checked', true);
     },
 
     set value(value) {
@@ -45,6 +39,12 @@ exports.Dropdown = Button('.dropdown', {menu: 'self'}, [
 
         return value;
     },
+
+    get selectedItem() {
+        return this.menu.query('.menu-item.checked', true);
+    },
+    
+    // ---------------------------------------------------------------------------------------------
     
     updateTitle: function(item) {
         var caption = item.attr('caption');
@@ -64,6 +64,5 @@ exports.Dropdown = Button('.dropdown', {menu: 'self'}, [
 // *************************************************************************************************
 
 function escapeValue(value) {
-    // XXXjoe Escape quotes
-    return value;
+    return value.replace(/"/g, '\\"');
 }

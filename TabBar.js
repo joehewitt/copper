@@ -12,7 +12,30 @@ exports.TabBar = html.div('.tab-bar', {onclick: '$onClick'}, [],
     tabselected: $.event,
     tabclosed: $.event,
     
-    // *************************************************************************************************
+    // ---------------------------------------------------------------------------------------------
+
+    get value() {
+        return this._value;
+    },
+
+    set value(value) {
+        this._value = value;
+
+        this.query('.tab.selected').removeClass('selected');
+        
+        var selectedTab = this.query('.tab[value="' + value + '"]');
+        if (selectedTab.length) {
+            selectedTab.addClass('selected');
+
+            this.parent().query('.tab-page.selected').removeClass('selected');
+            this.parent().query('.tab-page[value="' + value + '"]').addClass('selected');
+        }
+        
+        this.tabselected(selectedTab);
+    },
+
+    // ---------------------------------------------------------------------------------------------
+    // ore.Tag
 
     construct: function() {
         setTimeout(_.bind(function() {
@@ -36,25 +59,7 @@ exports.TabBar = html.div('.tab-bar', {onclick: '$onClick'}, [],
         }, this));
     },
 
-    get value() {
-        return this._value;
-    },
-
-    set value(value) {
-        this._value = value;
-
-        this.query('.tab.selected').removeClass('selected');
-        
-        var selectedTab = this.query('.tab[value="' + value + '"]');
-        if (selectedTab.length) {
-            selectedTab.addClass('selected');
-
-            this.parent().query('.tab-page.selected').removeClass('selected');
-            this.parent().query('.tab-page[value="' + value + '"]').addClass('selected');
-        }
-        
-        this.tabselected(selectedTab);
-    },
+    // ---------------------------------------------------------------------------------------------
 
     closeTab: function(tab) {
         var previous = $(tab).previous();
@@ -73,8 +78,8 @@ exports.TabBar = html.div('.tab-bar', {onclick: '$onClick'}, [],
         this.tabclosed(tab);
     },
 
-    // *************************************************************************************************
-
+    // ---------------------------------------------------------------------------------------------
+    
     onClick: function(event) {
         var tab = $(event.target).closest('.tab');
         if (tab.length) {
@@ -83,11 +88,15 @@ exports.TabBar = html.div('.tab-bar', {onclick: '$onClick'}, [],
     },
 });
 
+// *************************************************************************************************
+
 exports.Tab = html.a('.tab', {type: 'replace'}, [],
 {
     get selected() {
         return this.cssClass('selected');
     },
+        
+    // ---------------------------------------------------------------------------------------------
     
     select: function() {
         this.parent().value = this.attr('value');

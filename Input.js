@@ -7,10 +7,10 @@ var KeyMap = require('./KeyManager').KeyMap;
 
 // *************************************************************************************************
 
-exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
+exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown',
                                                      onfocus: '$onFocus',
                                                      onblur: '$onBlur',
-                                                     onmousedown: '$onMouseDown'}, [
+                                                     oninput: '$onInput',}, [
 ], {
     shouldSnap: false,
     rounding: 100,
@@ -18,6 +18,8 @@ exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
 
     updated: $.event,
 
+    // ---------------------------------------------------------------------------------------------
+    
     get value() {
         return parseFloat(this.val().value);
     },
@@ -36,6 +38,8 @@ exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
         }
         return this._hotKeys;
     },
+
+    // ---------------------------------------------------------------------------------------------
 
     formatValue: function(value) {
         if (this.min !== undefined) {
@@ -67,33 +71,7 @@ exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
         }
     },
 
-    onInput: function(event) {
-        var newValue = this.value;
-        var constrainedValue = this.formatValue(newValue);
-        if (newValue != constrainedValue) {
-            this.value = constrainedValue; 
-        }
-        this.updated(this);
-    },
-
-    onFocus: function() {
-        this.onMouseWheel = _.bind(function(event) {
-            if (event.deltaY > 0) {
-                this.incrementNumber(this.increment);
-                event.preventDefault();
-            } else if (event.deltaY < 0) {
-                this.incrementNumber(-this.increment);
-                event.preventDefault();
-            }
-        }, this);
-
-        $(window).listen('mousewheel', this.onMouseWheel, true);
-    },
-
-    onBlur: function() {
-        $(window).unlisten('mousewheel', this.onMouseWheel, true);
-        delete this.onMouseWheel;
-    },
+    // ---------------------------------------------------------------------------------------------
 
     onMouseDown: function(event) {
         if (this.increment !== undefined) {
@@ -133,4 +111,32 @@ exports.NumericInput = html.input('.numeric-input', {oninput: '$onInput',
                      .listen('mouseup', this.onMouseUp, true);
         }
     },    
+
+    onFocus: function() {
+        this.onMouseWheel = _.bind(function(event) {
+            if (event.deltaY > 0) {
+                this.incrementNumber(this.increment);
+                event.preventDefault();
+            } else if (event.deltaY < 0) {
+                this.incrementNumber(-this.increment);
+                event.preventDefault();
+            }
+        }, this);
+
+        $(window).listen('mousewheel', this.onMouseWheel, true);
+    },
+
+    onBlur: function() {
+        $(window).unlisten('mousewheel', this.onMouseWheel, true);
+        delete this.onMouseWheel;
+    },
+
+    onInput: function(event) {
+        var newValue = this.value;
+        var constrainedValue = this.formatValue(newValue);
+        if (newValue != constrainedValue) {
+            this.value = constrainedValue; 
+        }
+        this.updated(this);
+    },
 });    

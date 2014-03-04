@@ -76,6 +76,8 @@ Command.prototype = {
         }
     },    
 
+    // ---------------------------------------------------------------------------------------------
+    
     validate: function() { 
         if (this._validate) {
             return this._validate.apply(this.self, [this.value]);

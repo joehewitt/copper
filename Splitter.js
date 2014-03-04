@@ -3,6 +3,8 @@ var _ = require('underscore'),
     $ = require('ore'),
     html = require('ore/html');
 
+// *************************************************************************************************
+
 exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
     html.div('.splitter-box')
 ], {
@@ -10,11 +12,31 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
 
     resized: $.event,
 
+    // ---------------------------------------------------------------------------------------------
+
+    get orientation() {
+        if (!this._orientation) {
+            if (this.target == 'inner-top') {
+                this._orientation = 'column';
+            } else if (this.target == 'flexible-siblings' || this.target == 'panels') {
+                this._orientation = this.parent().style('-webkit-flex-direction');
+            } else {
+                this._orientation = 'row';
+            }
+        }
+        return this._orientation;
+    },
+
+    // ---------------------------------------------------------------------------------------------
+    // ore.Tag
+
     construct: function() {
         setTimeout(_.bind(function() {
             this.autoOrient();
         }, this));
     },
+
+    // ---------------------------------------------------------------------------------------------
 
     getPreviousBox: function() {
         if (this.target == 'inner-top') {
@@ -50,19 +72,6 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
             }
             return next;
         }
-    },
-
-    get orientation() {
-        if (!this._orientation) {
-            if (this.target == 'inner-top') {
-                this._orientation = 'column';
-            } else if (this.target == 'flexible-siblings' || this.target == 'panels') {
-                this._orientation = this.parent().style('-webkit-flex-direction');
-            } else {
-                this._orientation = 'row';
-            }
-        }
-        return this._orientation;
     },
 
     autoOrient: function() {
@@ -103,6 +112,8 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
 
         this._oriented = true;
     },
+
+    // ---------------------------------------------------------------------------------------------
 
     onMouseDown: function(event) {
         event.preventDefault();

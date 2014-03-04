@@ -2,8 +2,11 @@
 var $ = require('ore'),
     _ = require('underscore'),
     html = require('ore/html'),
-    routes = require('ore/routes'),
-    Container = require('./Container').Container;
+    routes = require('ore/routes');
+
+var Container = require('./Container').Container;
+
+// *************************************************************************************************
 
 exports.Page = Container('.page', {}, [],
 {

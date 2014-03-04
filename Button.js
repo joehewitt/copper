@@ -9,6 +9,8 @@ exports.Button = html.div('.button', {}, [
 ], {
     value: null,
 
+    // ---------------------------------------------------------------------------------------------
+
     get selected() {
         return this.cssClass('selected');
     },
@@ -22,37 +24,47 @@ exports.Button = html.div('.button', {}, [
         return selected;
     },
 
-    toggle: function() {
-        this.selected = !this.selected;
-    },
+    get menu() {
+        if (this.openedMenu) {
+            return this.openedMenu;
+        }
 
-    showMenu: function(menu) {
         var menuSelector = this.attr('menu');
         if (menuSelector) {
-            var menu;
             if (menuSelector == 'self') {
-                menu = this.query('.menu', true);
+                var menu = this.query('.menu', true);
+                return menu.length ? menu : null;
             } else {
                 var container = this.closest('.container');
                 if (!container.length) {
                     container = $(document);
                 }
-                menu = container.query(menuSelector, true);
+                var menu = container.query(menuSelector, true);
+                return menu.length ? menu : null;
             }
+        }
+    },
 
-            if (menu && menu.length) {
-                this.openedMenu = menu;
+    // ---------------------------------------------------------------------------------------------
 
-                var onHidden = _.bind(function () {
-                    this.openedMenu = null;
-                    this.removeClass('depressed');
-                    menu.unlisten('hidden', onHidden);
-                }, this);
+    toggle: function() {
+        this.selected = !this.selected;
+    },
 
-                this.addClass('depressed');
-                menu.listen('hidden', onHidden);
-                return menu.show(this);
-            }
+    showMenu: function(menu) {
+        var menu = this.menu;
+        if (menu) {
+            this.openedMenu = menu;
+
+            var onHidden = _.bind(function () {
+                this.openedMenu = null;
+                this.removeClass('depressed');
+                menu.unlisten('hidden', onHidden);
+            }, this);
+
+            this.addClass('depressed');
+            menu.listen('hidden', onHidden);
+            return menu.show(this);
         }
     }
 });    
@@ -62,6 +74,8 @@ exports.Button = html.div('.button', {}, [
 exports.Checkbox = html.input('.checkbox', {type: 'checkbox'}, [
 ], {
     value: null,
+
+    // ---------------------------------------------------------------------------------------------
 
     get checked() {
         return this.prop('checked');
@@ -76,6 +90,8 @@ exports.Checkbox = html.input('.checkbox', {type: 'checkbox'}, [
         return checked;
     },
 
+    // ---------------------------------------------------------------------------------------------
+    
     toggle: function() {
         this.checked = !this.checked;
     }

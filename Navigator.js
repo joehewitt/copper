@@ -11,10 +11,11 @@ exports.Navigator = html.div('.navigator', {}, [
     html.div('.navigator-page-box', {onpopped: '$onPopped'}, [
         html.HERE
     ]),
-],
-{
+], {
     navigating: $.event,
     navigated: $.event,
+
+    // ---------------------------------------------------------------------------------------------
 
     get currentHeader() {
         return this.stack ? this.stack[this.stack.length-1].header : null;
@@ -25,6 +26,7 @@ exports.Navigator = html.div('.navigator', {}, [
     },
     
     // ---------------------------------------------------------------------------------------------
+    // ore.Tag
 
     construct: function() {
         var startPage = this.query('.navigator-page', true);
@@ -32,7 +34,7 @@ exports.Navigator = html.div('.navigator', {}, [
             var header;
             var title = startPage.attr('title');
             if (title) {
-                header = new exports.NavigationBar();
+                header = new NavigationBar();
                 header.addClass('navigator-header');
                 header.html(title);
                 this.query('.navigator-header-box').append(header);
@@ -61,7 +63,7 @@ exports.Navigator = html.div('.navigator', {}, [
 
     pushPage: function(page, header, notAnimated) {
         if (typeof(header) == 'string') {
-            var bar = new exports.NavigationBar();
+            var bar = new NavigationBar();
             bar.html(header);
             header = bar;
         }
@@ -227,6 +229,9 @@ exports.Navigator = html.div('.navigator', {}, [
     },
 });
 
+// *************************************************************************************************
+
+var NavigationBar =
 exports.NavigationBar = html.div('.navigation-bar', {}, [
     Button('.navigation-back-button.back-button'),
     html.div('.navigation-bar-title', {}, [html.HERE]),

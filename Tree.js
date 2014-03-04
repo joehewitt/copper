@@ -9,25 +9,13 @@ exports.Tree = html.div('.tree', {onmousedown: '$onMouseDown'}, [
     html.div('.tree-container.vertical', [
         html.HERE
     ])
-],
-{
+], {
     selectedItems: null,
     
     selectitem: $.event,
 
-    onMouseDown: function(event) {
-        var item = $(event.target).closest('.tree-item');
-        if (event.metaKey && !event.shiftKey && !event.altKey && !event.ctrlKey) {
-            this.toggleItem(item);
-            event.preventDefault();
-        } else if (event.shiftKey && !event.metaKey && !event.altKey && !event.ctrlKey) {
-            this.toggleItemRange(item);
-            event.preventDefault();
-        } else if (!item.cssClass('selected')) {
-            this.selectItem(item);
-        }
-    },
-    
+    // ---------------------------------------------------------------------------------------------
+
     selectItem: function(item, others) {
         if (this.selectedItems) {
             this.selectedItems.removeClass('selected');
@@ -84,6 +72,23 @@ exports.Tree = html.div('.tree', {onmousedown: '$onMouseDown'}, [
             }, this));
         }
     },
+
+    // ---------------------------------------------------------------------------------------------
+
+    onMouseDown: function(event) {
+        var item = $(event.target).closest('.tree-item');
+        if (event.metaKey && !event.shiftKey && !event.altKey && !event.ctrlKey) {
+            this.toggleItem(item);
+            event.preventDefault();
+        } else if (event.shiftKey && !event.metaKey && !event.altKey && !event.ctrlKey) {
+            this.toggleItemRange(item);
+            event.preventDefault();
+        } else if (!item.cssClass('selected')) {
+            this.selectItem(item);
+        }
+    },
 });
+
+// *************************************************************************************************
 
 exports.TreeItem = html.a('.tree-item');

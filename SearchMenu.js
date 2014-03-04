@@ -1,13 +1,14 @@
 
 var _ = require('underscore'),
     $ = require('ore'),
-    html = require('ore/html'),
-    KeyMap = require('copper/KeyManager').KeyMap,
-    BINDKEY = require('copper/KeyManager').BINDKEY,
-    List = require('copper/List').List,
-    Menu = require('copper/Menu').Menu,
-    MenuItem = require('copper/Menu').MenuItem,
-    MenuSeparator = require('copper/Menu').MenuSeparator;
+    html = require('ore/html');
+
+var KeyMap = require('./KeyManager').KeyMap,
+    BINDKEY = require('./KeyManager').BINDKEY,
+    List = require('./List').List,
+    Menu = require('./Menu').Menu,
+    MenuItem = require('./Menu').MenuItem,
+    MenuSeparator = require('./Menu').MenuSeparator;
 
 // *************************************************************************************************
 
@@ -41,6 +42,7 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
     },
 
     // ---------------------------------------------------------------------------------------------
+    // ore.Tag
 
     construct: function() {
         this.commands = [];

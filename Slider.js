@@ -13,14 +13,16 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     html.div('.buffer'),
     html.div('.thumb', {onmousedown: '$onMouseDownThumb'})
 ], {
+    _value: 0,
     min: 0,
     max: 1,
-    value: 0,
     buffer: 0,
 
     updated: $.event,
     begandragging: $.event,
     endeddragging: $.event,
+
+    // ---------------------------------------------------------------------------------------------
 
     get hotKeys() {
         if (!this._hotKeys) {
@@ -34,24 +36,27 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         return this._hotKeys;
     },
 
-    construct: function() {
-        setTimeout(_.bind(function() {
-            this.setValue(this.value);    
-        }, this));
+    get value() {
+        return this._value;
     },
 
-    reset: function() {
-        this.value = 0;
-        this.buffer = 0;
-        this.layout();
-    },
-
-    setValue: function(value) {
+    set value(value) {
         if (!this.dragging && value >= this.min && value <= this.max) {
-            this.value = value;
+            this._value = value;
             this.layout();
         }
     },
+
+    // ---------------------------------------------------------------------------------------------
+    // ore.Tag
+
+    construct: function() {
+        setTimeout(_.bind(function() {
+            this.layout();
+        }, this));
+    },
+
+    // ---------------------------------------------------------------------------------------------
 
     setBuffer: function(buffer) {
         if (this.buffer == 1 && this.buffer < 1) {
@@ -72,22 +77,22 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     },
 
     slideHome: function() {
-        this.setValue(this.min);
+        this.value = this.min;
         this.updated(this);
     },
 
     slideEnd: function() {
-        this.setValue(this.max);
+        this.value = this.max;
         this.updated(this);
     },
     
     slideDown: function() {
-        this.setValue(this.value + -this.increment);
+        this.value -= this.increment;
         this.updated(this);
     },
 
     slideUp: function() {
-        this.setValue(this.value + this.increment);
+        this.value += this.increment;
         this.updated(this);
     },
 
@@ -102,7 +107,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         }
     },
 
-    // *********************************************************************************************
+    // ---------------------------------------------------------------------------------------------
 
     _layoutTicks: function(cb) {
         this.query('.tickmark').remove();
@@ -133,7 +138,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         }
     },
 
-    // *********************************************************************************************
+    // ---------------------------------------------------------------------------------------------
 
     onMouseDownTrack: function(event) {
         if ($(event.target).cssClass('thumb')) return;
@@ -157,7 +162,6 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         }
 
         this.value = value;
-        this.layout();
         this.updated(this);
     },
 
@@ -203,7 +207,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
             var pos = range > 0 ? value / range : 0;
             thumb.css('left', pos * (this.width() - thumb.width()));
 
-            this.value = value;
+            this._value = value;
             this.updated(this);
         }, this);
 

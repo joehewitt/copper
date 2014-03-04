@@ -25,14 +25,8 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
     shown: $.event.dom('shown', true),
     hidden: $.event.dom('hidden', true),
 
-    get visible() {
-        return this.cssClass('visible');
-    },
-
-    get list() {
-        return this.query('.menu-root-list');
-    },
-
+    // ---------------------------------------------------------------------------------------------
+    
     get hotKeys() {
         if (!this._hotKeys) {
             this._hotKeys = new KeyMap([
@@ -43,7 +37,16 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
         return this._hotKeys;
     },
 
+    get visible() {
+        return this.cssClass('visible');
+    },
+
+    get list() {
+        return this.query('.menu-root-list');
+    },
+
     // ---------------------------------------------------------------------------------------------
+    // ore.Set
 
     focus: function() {
         return this.list.focus();
@@ -53,43 +56,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
         return this.list.copy(doubleTap);
     },
     
-    selectHome: function() {
-        this.list.selectHome();
-    },
-
-    selectEnd: function() {
-        this.list.selectEnd();
-    },
-
-    selectUp: function() {
-        this.list.selectUp();
-    },
-
-    selectDown: function() {
-        this.list.selectDown();
-    },
-
-    navigateForward: function() {
-        this.list.navigateForward();
-    },
-
-    navigateBack: function() {
-        this.list.navigateBack();
-    },
-
-    enter: function() {
-        this.list.enter();
-    },
-
     // ---------------------------------------------------------------------------------------------
-
-    select: function(item) {
-        this.list.select(item);
-    },
-
-    populate: function(commands, selectedCommand, hideInvalidItems) {
-        this.list.populate(commands, selectedCommand, hideInvalidItems, MenuItem, MenuSeparator);
-    },
 
     show: function(anchorBox) {
         if (!this.parent().length) {
@@ -221,6 +188,42 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
         }        
     },
 
+    populate: function(commands, selectedCommand, hideInvalidItems) {
+        this.list.populate(commands, selectedCommand, hideInvalidItems, MenuItem, MenuSeparator);
+    },
+
+    select: function(item) {
+        this.list.select(item);
+    },
+
+    selectHome: function() {
+        this.list.selectHome();
+    },
+
+    selectEnd: function() {
+        this.list.selectEnd();
+    },
+
+    selectUp: function() {
+        this.list.selectUp();
+    },
+
+    selectDown: function() {
+        this.list.selectDown();
+    },
+
+    navigateForward: function() {
+        this.list.navigateForward();
+    },
+
+    navigateBack: function() {
+        this.list.navigateBack();
+    },
+
+    enter: function() {
+        this.list.enter();
+    },
+
     // ---------------------------------------------------------------------------------------------
 
     onNavigating: function(event) {
@@ -258,6 +261,8 @@ exports.MenuSliderItem = html.div('.menu-slider-item', {}, [
 ], {
     updated: $.event,
 
+    // ---------------------------------------------------------------------------------------------
+    
     get value() {
         return this._value;
     },
@@ -265,7 +270,7 @@ exports.MenuSliderItem = html.div('.menu-slider-item', {}, [
     set value(value) {
         this._value = value;
         this.query('.menu-item-input').value = value;
-        this.query('.menu-item-slider').setValue(value);
+        this.query('.menu-item-slider').value = value;
     },
 
     set title(title) {
@@ -291,13 +296,15 @@ exports.MenuSliderItem = html.div('.menu-slider-item', {}, [
         this.query('.menu-item-input').rounding = value;
     },
 
+    // ---------------------------------------------------------------------------------------------
+
     onSliderUpdated: function(slider) {
         this.query('.menu-item-input').value = slider.value;
         this.updated(slider.value);
     },
 
     onNumberUpdated: function(input) {
-        this.query('.menu-item-slider').setValue(input.value);
+        this.query('.menu-item-slider').value = input.value;
         this.updated(input.value);
     }
 });    

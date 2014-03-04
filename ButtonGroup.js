@@ -8,12 +8,8 @@ var _ = require('underscore'),
 exports.ButtonGroup = html.div('.button-group', [
 ], {
     updated: $.event,
-
-    // construct: function() {
-    //     setTimeout(_.bind(function() {
-    //         this.setValue(this.value);
-    //     }, this));
-    // },
+    
+    // ---------------------------------------------------------------------------------------------
 
     get value() {
         return this.query('.button.selected').value;

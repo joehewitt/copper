@@ -12,11 +12,16 @@ exports.ResizeSensor = html.div('.resize-sensor', [
 ], {
     resized: $.event,
 
+    // ---------------------------------------------------------------------------------------------
+    // ore.Tag
+    
     construct: function() {
         this.overflower = this.query('.overflow-sensor').first();
         this.underflower = this.query('.underflow-sensor').first();
         setTimeout(_.bind(this.testOverflow, this));
     },
+
+    // ---------------------------------------------------------------------------------------------
 
     testOverflow: function(shouldDispatch) {
         var resized = false;
