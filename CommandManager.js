@@ -26,6 +26,15 @@ exports.CommandManager.prototype = {
             ? this.history[this.historyCursor+1].command : null;
     },
 
+    get nextUndoState() {
+        return this.historyCursor >= 0 ? this.history[this.historyCursor] : null;
+    },
+
+    get nextRedoState() {
+        return this.historyCursor < this.history.length-1
+            ? this.history[this.historyCursor+1] : null;
+    },
+
     // ---------------------------------------------------------------------------------------------
 
     undoCommand: function() {

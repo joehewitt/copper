@@ -176,19 +176,27 @@ exports.KeyManager.prototype = {
     // ---------------------------------------------------------------------------------------------
 
     get _activeKeyMaps() {
-        var keyMaps = [];
+        var activeKeyMaps = [];
+
+        var keyMaps = this.keyMaps;
         for (var i = keyMaps.length-1; i >= 0; --i) {
             var keyMap = keyMaps[i];
-            for (var sibling = keyMap.lastSibling; sibling; sibling = sibling.previousSibling) {
-                keyMaps.push(sibling);
+            for (var map = keyMap.lastSibling; map; map = map.previousSibling) {
+                activeKeyMaps.push(map);
             }
-            keyMaps.push(keyMap);
+            activeKeyMaps.push(keyMap);
         }
-        if (this.focusedKeyMaps) {
-            keyMaps = keyMaps.concat(this.focusedKeyMaps);
+        
+        keyMaps = this.focusedKeyMaps;
+        for (var i = 0, l =keyMaps ? keyMaps.length : 0; i < l; ++i) {
+            var keyMap = keyMaps[i];
+            for (var map = keyMap.lastSibling; map; map = map.previousSibling) {
+                activeKeyMaps.push(map);
+            }
+            activeKeyMaps.push(keyMap);
         }
 
-        return keyMaps;
+        return activeKeyMaps;
     },
 
     get _modeKeysDown() {
@@ -291,7 +299,7 @@ exports.KeyMap.prototype = {
         if (this.lastSibling) {
             keyMap.previousSibling = this.lastSibling;
         }
-        this.lastSibling = keyMap
+        this.lastSibling = keyMap;
     },
 
     remove: function(keyMap) {

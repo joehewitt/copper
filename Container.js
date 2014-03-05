@@ -29,7 +29,9 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
             } else {
                 var group = button.closest('.button-group');
                 if (group.length) {
-                    group.value = button.value;
+                    var value = button.value;
+                    group.value = value;
+                    group.updated({target: group, value: value});
                 } else {             
                     var command = button.cmd();
                     if (command) {

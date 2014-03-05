@@ -22,7 +22,5 @@ exports.ButtonGroup = html.div('.button-group', [
                 button.selected = true;
             }
         }, this));
-
-        this.updated({target: this, value: value});
     },
 });    
