@@ -42,13 +42,13 @@ exports.CommandManager.prototype = {
     undoCommand: function() {
         var state = this.history[this.historyCursor--];
         // D&&D('undo', this.historyCursor, state.command.title);
-        state.command.undo(state.undo || state.redo);
+        state.command.undo(state);
     },
 
     redoCommand: function() {
         var state = this.history[++this.historyCursor];
         // D&&D('redo', this.historyCursor, state.command.title);
-        state.command.redo(state.redo);
+        state.command.redo(state);
     },
 
     pushState: function(state) {
@@ -93,6 +93,7 @@ exports.CommandMap = function(self, manager, definitions) {
         if (command.hasUndo) {
             var wrapped = wrapUndoable(command);
             wrapped.save = _.bind(command.save, command);
+            wrapped.each = _.bind(command.each, command);
             self[commandName] = wrapped;
         }
 
@@ -183,9 +184,11 @@ exports.Command = function(properties) {
     this._className = properties.className;
 
     this._execute = properties.execute;
+    this._save = properties.save;
+    this._pre = properties.pre;
+    this._post = properties.post;
     this._redo = properties.redo;
     this._undo = properties.undo;
-    this._save = properties.save;
     this._children = properties.children;
     this._actions = properties.actions;
     
@@ -266,7 +269,13 @@ Command.prototype = {
     execute: function() { 
         if (this.hasUndo) {
             var state = this.save.apply(this, arguments);
+            if (this._pre) {
+                this._pre.apply(this.self);
+            }
             this._redo.apply(this.self, state.redo);
+            if (this._post) {
+                this._post.apply(this.self);
+            }
         } else if (this._execute) {
             return this._execute.apply(this.self, arguments);
         }
@@ -274,28 +283,73 @@ Command.prototype = {
 
     save: function() { 
         if (this.hasUndo) {
-            var state;
-            if (this._save) {
-                state = this._save.apply(this.self, arguments);
-            } else {
-                state = {redo: Array.prototype.slice.call(arguments, 0) };
-            }
+            var state = this._save
+                ? this._save.apply(this.self, arguments)
+                : {redo: Array.prototype.slice.call(arguments, 0) };
             state.command = this;
             this.manager.pushState(state);
             return state;
         }
     },
 
+    each: function(zippedArgs, saveOnly) {
+        if (this.hasUndo) {
+            var save = this._save;
+            var self = this.self;
+            var substates = _.map(zippedArgs, function(args) {
+                return save ? save.apply(self, args) : {redo: args};
+            });
+
+            var state = {command: this, substates: substates};
+            this.manager.pushState(state);
+
+            if (!saveOnly) {
+                this.redo(state);
+            }
+        }
+    },
+
     undo: function(state) {
         if (this.hasUndo) {
+            if (this._pre) {
+                this._pre.apply(this.self);
+            }
+
+            var self = this.self;
             var doer = this._undo || this._redo;
-            doer.apply(this.self, state);
+            if (state.substates) {
+                _.each(state.substates, function(substate) {
+                    doer.apply(self, substate.undo || substate.redo);
+                });
+            } else {
+                doer.apply(self, state.undo || state.redo);
+            }
+
+            if (this._post) {
+                this._post.apply(this.self);
+            }            
         }
     },
 
     redo: function(state) {
         if (this.hasUndo) {
-            this._redo.apply(this.self, state);
+            if (this._pre) {
+                this._pre.apply(this.self);
+            }
+
+            var self = this.self;
+            var doer = this._redo;
+            if (state.substates) {
+                _.each(state.substates, function(substate) {
+                    doer.apply(self, substate.redo);
+                });
+            } else {
+                doer.apply(self, state.redo);
+            }
+
+            if (this._post) {
+                this._post.apply(this.self);
+            }            
         }
     },
 
