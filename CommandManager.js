@@ -6,6 +6,8 @@ var _ = require('underscore');
 exports.CommandManager = function(container) {
     this.history = [];
     this.historyCursor = -1;
+    this.coalesceTime = 550;
+    this.lastCommandTime = 0;
 }
 
 exports.CommandManager.prototype = {
@@ -50,18 +52,23 @@ exports.CommandManager.prototype = {
     },
 
     pushState: function(state) {
-        if (!this.history) {
-            this.history = [state];
-            this.historyCursor = 0;
+        var now = state.time = Date.now();
+
+        if (this.historyCursor == -1) {
+            this.history = [];
+        } else if (this.historyCursor < this.history.length-1) {
+            this.history = this.history.slice(this.historyCursor+1);
         } else {
-            if (this.historyCursor == -1) {
-                this.history = [];
-            } else if (this.historyCursor < this.history.length-1) {
-                this.history = this.history.slice(this.historyCursor+1);
-            } 
-            this.history.push(state);
-            this.historyCursor = this.history.length-1;
+            var top = this.history[this.historyCursor];
+            if (now - top.time < this.coalesceTime && state.command.id == top.command.id) {
+                top.time = now;
+                top.redo = state.redo;
+                // D&&D('repeat', top.command.title);
+                return;
+            }
         }
+        this.history.push(state);
+        this.historyCursor = this.history.length-1;
         // D&&D('do', this.historyCursor, state.command.title);
     },
 };
