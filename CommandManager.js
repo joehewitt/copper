@@ -40,7 +40,7 @@ exports.CommandManager.prototype = {
     undoCommand: function() {
         var state = this.history[this.historyCursor--];
         // D&&D('undo', this.historyCursor, state.command.title);
-        state.command.undo(state.undo);
+        state.command.undo(state.undo || state.redo);
     },
 
     redoCommand: function() {
@@ -84,7 +84,9 @@ exports.CommandMap = function(self, manager, definitions) {
         map[commandName] = command
         
         if (command.hasUndo) {
-            self[commandName] = wrapUndoable(command);
+            var wrapped = wrapUndoable(command);
+            wrapped.save = _.bind(command.save, command);
+            self[commandName] = wrapped;
         }
 
         var conditionId = command.conditionId;
@@ -256,13 +258,24 @@ Command.prototype = {
 
     execute: function() { 
         if (this.hasUndo) {
-            var state = this._save.apply(this.self, arguments);
-            state.command = this;
-            this.manager.pushState(state);
-
+            var state = this.save.apply(this, arguments);
             this._redo.apply(this.self, state.redo);
         } else if (this._execute) {
             return this._execute.apply(this.self, arguments);
+        }
+    },
+
+    save: function() { 
+        if (this.hasUndo) {
+            var state;
+            if (this._save) {
+                state = this._save.apply(this.self, arguments);
+            } else {
+                state = {redo: Array.prototype.slice.call(arguments, 0) };
+            }
+            state.command = this;
+            this.manager.pushState(state);
+            return state;
         }
     },
 
