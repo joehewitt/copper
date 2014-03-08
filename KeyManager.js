@@ -226,7 +226,8 @@ exports.KeyManager.prototype = {
     },
     
     _processKeyMap: function(keyMap, event, keyCode, shift, meta, alt, ctrl, up) {
-        if (!shift && !meta && !alt && !ctrl && keyMap.processSequenceKey(event, this.keysDown)) {
+        if (keyMap.processSequenceKey(event, this.keysDown)) {
+        // if (!shift && !meta && !alt && !ctrl && keyMap.processSequenceKey(event, this.keysDown)) {
             return true;
         } else {
             var result = keyMap.processComboKey(event, keyCode, shift, meta, alt, ctrl, up);

@@ -62,7 +62,13 @@ exports.CommandManager.prototype = {
             var top = this.history[this.historyCursor];
             if (now - top.time < this.coalesceTime && state.command.id == top.command.id) {
                 top.time = now;
-                top.redo = state.redo;
+                if (state.substates) {
+                    for (var i = 0, l = state.substates.length; i < l; ++i) {
+                        top.substates[i].redo = state.substates[i].redo;                        
+                    }
+                } else {
+                    top.redo = state.redo;
+                }
                 // D&&D('repeat', top.command.title);
                 return;
             }
@@ -270,11 +276,11 @@ Command.prototype = {
         if (this.hasUndo) {
             var state = this.save.apply(this, arguments);
             if (this._pre) {
-                this._pre.apply(this.self);
+                this._pre.call(this.self);
             }
             this._redo.apply(this.self, state.redo);
             if (this._post) {
-                this._post.apply(this.self);
+                this._post.call(this.self);
             }
         } else if (this._execute) {
             return this._execute.apply(this.self, arguments);
@@ -312,7 +318,7 @@ Command.prototype = {
     undo: function(state) {
         if (this.hasUndo) {
             if (this._pre) {
-                this._pre.apply(this.self);
+                this._pre.call(this.self, true);
             }
 
             var self = this.self;
@@ -326,7 +332,7 @@ Command.prototype = {
             }
 
             if (this._post) {
-                this._post.apply(this.self);
+                this._post.call(this.self, true);
             }            
         }
     },
