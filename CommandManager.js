@@ -1,16 +1,22 @@
 
 var _ = require('underscore');
 
+D = null;
+
 // *************************************************************************************************
 
 exports.CommandManager = function(container) {
     this.history = [];
-    this.historyCursor = -1;
-    this.coalesceTime = 550;
-    this.lastCommandTime = 0;
+    this.stack = [this.history];
 }
 
 exports.CommandManager.prototype = {
+    isDoing: false,
+    historyCursor: -1,
+    collapseTime: 550,
+
+    // ---------------------------------------------------------------------------------------------
+
     get canUndo() {
         return this.historyCursor >= 0;
     },
@@ -28,54 +34,154 @@ exports.CommandManager.prototype = {
             ? this.history[this.historyCursor+1].command : null;
     },
 
-    get nextUndoState() {
-        return this.historyCursor >= 0 ? this.history[this.historyCursor] : null;
+    get nextUndoTitle() {
+        var state = this.historyCursor >= 0 ? this.history[this.historyCursor] : null;
+        if (state) {
+            while (state && state.history) {
+                state = state.history[0];
+            }
+            return state.title ? state.title() : state.command.title;
+        }
     },
 
-    get nextRedoState() {
-        return this.historyCursor < this.history.length-1
+    get nextRedoTitle() {
+        var state = this.historyCursor < this.history.length-1
             ? this.history[this.historyCursor+1] : null;
+        if (state) {
+            while (state && state.history) {
+                state = state.history[0];
+            }
+            return state.title ? state.title() : state.command.title;
+        }
     },
 
     // ---------------------------------------------------------------------------------------------
 
+    begin: function(onCancel) {
+        var newHistory = [];
+        var state = {history: newHistory, onCancel: onCancel};
+        this.pushState(state);
+
+        this.stack.push(newHistory);
+        D&&D('begin', this.stack.length);
+
+        this.history = newHistory;
+    },
+
+    end: function() {
+        this.stack.pop();
+        D&&D('end', this.stack.length);
+
+        this.history = this.stack[this.stack.length-1];
+
+        var state = this.history[this.history.length-1];
+        var onCancel = state.onCancel;
+        state.onCancel = null;
+        return onCancel;
+    },
+
     undoCommand: function() {
-        var state = this.history[this.historyCursor--];
-        // D&&D('undo', this.historyCursor, state.command.title);
-        state.command.undo(state);
+        if (this.isDoing) return;
+        this.isDoing = true;
+
+        if (this.stack.length > 1) {
+            while (this.stack.length > 1) {
+                var onCancel = this.end();
+                if (!onCancel || !onCancel()) {
+                    var state = this.history[this.history.length-1];
+                    for (var i = state.history.length-1; i >= 0; --i) {
+                        this._undoState(state.history[i]);
+                    }
+                }
+            }
+            // Discard the state for the incomplete history so it can't be redone
+            this.history.pop();
+            --this.historyCursor;
+        } else {
+            var state = this.history[this.historyCursor--];
+            this._undoState(state);
+        }
+        this.isDoing = false;
     },
 
     redoCommand: function() {
-        var state = this.history[++this.historyCursor];
-        // D&&D('redo', this.historyCursor, state.command.title);
-        state.command.redo(state);
+        if (this.isDoing) return;
+        this.isDoing = true;
+
+        if (this.stack.length == 1) {
+            var state = this.history[++this.historyCursor];
+            this._redoState(state);
+        }
+        this.isDoing = false;
     },
 
     pushState: function(state) {
-        var now = state.time = Date.now();
+        var now = Date.now();
+        state.time = now;
 
-        if (this.historyCursor == -1) {
-            this.history = [];
-        } else if (this.historyCursor < this.history.length-1) {
-            this.history = this.history.slice(this.historyCursor+1);
-        } else {
-            var top = this.history[this.historyCursor];
-            if (now - top.time < this.coalesceTime && state.command.id == top.command.id) {
-                top.time = now;
-                if (state.substates) {
-                    for (var i = 0, l = state.substates.length; i < l; ++i) {
-                        top.substates[i].redo = state.substates[i].redo;                        
-                    }
-                } else {
-                    top.redo = state.redo;
+        if (!this._clipHistory() && this.history.length) {
+            var top = this.history[this.history.length-1];
+            if (now - top.time < this.collapseTime) {
+                if (state.command && top.command && state.command.id == top.command.id) {
+                    return this._collapseStates(state, top);
                 }
-                // D&&D('repeat', top.command.title);
-                return;
             }
         }
+
         this.history.push(state);
-        this.historyCursor = this.history.length-1;
-        // D&&D('do', this.historyCursor, state.command.title);
+        D&&D('do', state.command ? state.command.id : '',
+             this.historyCursor + '/' + this.stack.length);
+    },
+
+    // ---------------------------------------------------------------------------------------------
+
+    _clipHistory: function() {
+        if (this.stack.length == 1) {
+            var cursor = ++this.historyCursor;
+            if (cursor < this.history.length) {
+                this.history = this.stack[0] = this.history.slice(0, cursor);
+                return true;
+            }
+        }
+    },
+
+    _undoState: function(state) {
+        D&&D('undo', state.command ? state.command.id : '',
+             this.historyCursor + '/' + this.stack.length);
+
+        if (state.command) {
+            state.command.undo(state);
+        } else if (state.history) {
+            for (var i = state.history.length-1; i >= 0; --i) {
+                this._undoState(state.history[i]);
+            }
+        }        
+    },
+
+    _redoState: function(state) {
+        D&&D('redo', state.command ? state.command.id : '',
+             this.historyCursor + '/' + this.stack.length);
+
+        if (state.command) {
+            state.command.redo(state);
+        } else if (state.history) {
+            for (var i = 0, l = state.history.length; i < l; ++i) {
+                this._redoState(state.history[i]);
+            }
+        }        
+    },
+
+    _collapseStates: function(state, topState) {
+        D&&D('collapse', state.command.id);
+
+        topState.time = now;
+        if (state.substates) {
+            for (var i = 0, l = state.substates.length; i < l; ++i) {
+                topState.substates[i].redo = state.substates[i].redo;                        
+            }
+        } else {
+            topState.redo = state.redo;
+        }
     },
 };
 
@@ -142,11 +248,13 @@ exports.CommandMap.prototype = {
     
             for (var name in map.map) {
                 var command = map.map[name];
-                var title = command.title;
-                if (title) {
-                    var m = pattern.exec(title);
-                    if (m) {
-                        matches.push({index: m.index, command: command});
+                if (command.isSearchable) {
+                    var title = command.title;
+                    if (title) {
+                        var m = pattern.exec(title);
+                        if (m) {
+                            matches.push({index: m.index, command: command});
+                        }
                     }
                 }
             }
@@ -185,6 +293,8 @@ exports.CommandMap.prototype = {
 
 var Command = 
 exports.Command = function(properties) {
+    this.self = properties.self || this;
+
     this._title = properties.title;
     this._value = properties.value;
     this._className = properties.className;
@@ -204,7 +314,9 @@ exports.Command = function(properties) {
     this.hasUndo = !!properties.undo || !!properties.redo;
     this.hasChildren = !!properties.children;
     this.hasHover = !!properties.hover;
-    this.self = properties.self || this;
+    
+    var doer = this._execute || this._save || this._redo;
+    this.isSearchable = doer && !doer.length;
 
     if (typeof(properties.validate) == 'string') {
         this.conditionId = properties.validate;

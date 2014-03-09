@@ -125,7 +125,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
             }, this);
             this.onWindowBlur = _.bind(function(event) {
                 if (event.target == window) {
-                    // this.hide();
+                    this.hide();
                 }
             }, this);
             $(window).listen('mousedown', this.onMouseDown, true)
