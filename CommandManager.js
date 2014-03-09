@@ -1,7 +1,7 @@
 
 var _ = require('underscore');
 
-D = null;
+// var D = null;
 
 // *************************************************************************************************
 
@@ -174,7 +174,11 @@ exports.CommandManager.prototype = {
     _collapseStates: function(state, topState) {
         D&&D('collapse', state.command.id);
 
-        topState.time = now;
+        if (this.stack.length == 1) {
+            --this.historyCursor;
+        }
+        
+        topState.time = state.time;
         if (state.substates) {
             for (var i = 0, l = state.substates.length; i < l; ++i) {
                 topState.substates[i].redo = state.substates[i].redo;                        
@@ -315,8 +319,12 @@ exports.Command = function(properties) {
     this.hasChildren = !!properties.children;
     this.hasHover = !!properties.hover;
     
-    var doer = this._execute || this._save || this._redo;
-    this.isSearchable = doer && !doer.length;
+    if ('isSearchable' in properties) {
+        this.isSearchable = properties.isSearchable;    
+    } else {
+        var doer = this._execute || this._save || this._redo;
+        this.isSearchable = doer && !doer.length;        
+    }
 
     if (typeof(properties.validate) == 'string') {
         this.conditionId = properties.validate;
