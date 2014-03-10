@@ -57,6 +57,7 @@ var modifierKeys =
 exports.KeyManager.modifierKeys = {
     16: 'SHIFT',
     91: 'COMMAND',
+    93: 'COMMAND',
     18: 'OPTION',
     19: 'ALT',
     17: 'CONTROL',
@@ -75,33 +76,33 @@ exports.KeyManager.prototype = {
     activate: function() {
         if (window.document) {
             if (1 || jQuery.browser.safari) {
-                this.rootElement.listen("keydown", this._onKeyDown);
-                this.rootElement.listen("keypress", this._onKeyPress);
+                this.rootElement.listen("keydown", this._onKeyDown)
+                                .listen("keypress", this._onKeyPress);
             } else {
-                this.rootElement.listen("keypress", this._onKeyDown);
-                this.rootElement.listen("keypress", this._onKeyPress);
+                this.rootElement.listen("keypress", this._onKeyDown)
+                                .listen("keypress", this._onKeyPress);
             }
 
-            this.rootElement.listen("keyup", this._onKeyUp);
-            this.rootElement.listen("focusin", this._onFocusIn);
-            this.rootElement.listen("focusout", this._onFocusOut);
-            $(window).listen("blur", this._onWindowBlur);
+            this.rootElement.listen("keyup", this._onKeyUp)
+                            .listen("focusin", this._onFocusIn)
+                            .listen("focusout", this._onFocusOut);
+            $(window).listen("blur", this._onWindowBlur, true);
         }
     },
     
     deactivate: function() {
         if (1 || jQuery.browser.safari) {
-            this.rootElement.unlisten("keydown", this._onKeyDown);
-            this.rootElement.unlisten("keypress", this._onKeyPress);
+            this.rootElement.unlisten("keydown", this._onKeyDown)
+                            .unlisten("keypress", this._onKeyPress);
         } else {
-            this.rootElement.unlisten("keypress", this._onKeyDown);
-            this.rootElement.unlisten("keypress", this._onKeyPress);
+            this.rootElement.unlisten("keypress", this._onKeyDown)
+                            .unlisten("keypress", this._onKeyPress);
         }
 
-        this.rootElement.unlisten("keyup", this._onKeyUp);
-        this.rootElement.unlisten("focusin", this._onFocusIn);
-        this.rootElement.unlisten("focusout", this._onFocusOut);
-        $(window).unlisten("blur", this._onWindowBlur);
+        this.rootElement.unlisten("keyup", this._onKeyUp)
+                        .unlisten("focusin", this._onFocusIn)
+                        .unlisten("focusout", this._onFocusOut);
+        $(window).unlisten("blur", this._onWindowBlur, true);
     },
     
     findHotKey: function(commandId) {
@@ -115,7 +116,7 @@ exports.KeyManager.prototype = {
         }
     },
 
-    processKey: function(event, keyCode, shift, meta, alt, ctrl, up) {
+    processKey: function(event, keyCode, shift, meta, alt, ctrl, up, forceDefault) {
         if (up) {
             var index = this.keysDown.indexOf(keyCode);
             if (index >= 0) {
@@ -127,7 +128,8 @@ exports.KeyManager.prototype = {
 
         var keyMaps = this._activeKeyMaps;
         for (var i = 0, l = keyMaps.length; i < l; ++i) {
-            if (this._processKeyMap(keyMaps[i], event, keyCode, shift, meta, alt, ctrl, up)) {
+            if (this._processKeyMap(keyMaps[i], event, keyCode, shift, meta, alt, ctrl, up,
+                                    forceDefault)) {
                 break;
             }
         }
@@ -171,6 +173,7 @@ exports.KeyManager.prototype = {
         if (index >= 0) {
             keyMaps.splice(index, 1);
         }
+        keyMap.processSequenceKey(null, [], true);
     },
 
     // ---------------------------------------------------------------------------------------------
@@ -211,7 +214,7 @@ exports.KeyManager.prototype = {
         }
     },
 
-    keyMapsForTarget: function(target) {
+    _keyMapsForTarget: function(target) {
         var keyMaps = [];
 
         if (target) {
@@ -225,34 +228,45 @@ exports.KeyManager.prototype = {
         return keyMaps;
     },
     
-    _processKeyMap: function(keyMap, event, keyCode, shift, meta, alt, ctrl, up) {
-        if (keyMap.processSequenceKey(event, this.keysDown)) {
-        // if (!shift && !meta && !alt && !ctrl && keyMap.processSequenceKey(event, this.keysDown)) {
+    _processKeyMap: function(keyMap, event, keyCode, shift, meta, alt, ctrl, up, forceDefault) {
+        if (keyMap.processSequenceKey(event, this.keysDown, forceDefault)) {
             return true;
         } else {
             var result = keyMap.processComboKey(event, keyCode, shift, meta, alt, ctrl, up);
-            if (result.handled) {
-                // Prevent modes from being triggered after a key combo was activated
-                this.keysDown = [];
-            }
             if (result.caught || keyMap.exclusive) {
                 return true;
             }
         }
     },
 
+    _releaseAllKeys: function() {
+        for (var i = this.keysDown.length-1; i >= 0; --i) {
+            this.processKey(null, this.keysDown[i], false, false, false, false, true, true);
+        }        
+    },
+
     // ---------------------------------------------------------------------------------------------
     
     _onKeyDown: function(event) {
-        // D&&D("down", event.keyCode, event.metaKey);
-        this.processKey(event, event.keyCode,
+        var keyCode = translateKey(event.keyCode);
+        // D&&D("DOWN", keyCode, event.metaKey);
+        this.processKey(event, keyCode,
                         event.shiftKey, event.metaKey && !event.ctrlKey, event.altKey,
                         event.ctrlKey, false);
+
+        // On OS X, while the Command key is held down you stop getting keyup events for
+        // non-modifier keys, so we have to simulate the keyup right after the keydown
+        if (event.metaKey && !(keyCode in modifierKeys)) {
+        this.processKey(null, keyCode,
+                        event.shiftKey, event.metaKey && !event.ctrlKey, event.altKey,
+                        event.ctrlKey, true);
+        }
     },
 
     _onKeyPress: function(event) {
-        // D&&D("press", event.keyCode, event.charCode);
-        if (!event.metaKey && !event.ctrlKey && !event.altKey && event.keyCode < 6000) {
+        var keyCode = translateKey(event.keyCode);
+        // D&&D("PRESS", keyCode, event.charCode);
+        if (!event.metaKey && !event.ctrlKey && !event.altKey && keyCode < 6000) {
             if (this.processChar(event, event.charCode) || this._modeKeysDown) {
                 event.preventDefault();
             }
@@ -260,15 +274,16 @@ exports.KeyManager.prototype = {
     },    
 
     _onKeyUp: function(event) {
-        // D&&D("up", event.keyCode, event.metaKey);
-        this.processKey(event, event.keyCode,
+        var keyCode = translateKey(event.keyCode);
+        // D&&D("UP", keyCode, event.metaKey);
+        this.processKey(event, keyCode,
                         event.shiftKey, event.metaKey && !event.ctrlKey, event.altKey,
                         event.ctrlKey, true);
     },
 
     _onFocusIn: function(event) {
         // D&&D('focus', event.target.className);
-        this.focusedKeyMaps = this.keyMapsForTarget(event.target);
+        this.focusedKeyMaps = this._keyMapsForTarget(event.target);
     },
 
     _onFocusOut: function(event) {
@@ -277,8 +292,9 @@ exports.KeyManager.prototype = {
     },
 
     _onWindowBlur: function(event) {
-        this.keysDown = [];
-        this.redispatchSequence();
+        if (event.target == window) {
+            this._releaseAllKeys();
+        }
     }
 };
 
@@ -316,6 +332,7 @@ exports.KeyMap.prototype = {
             }
             before = map;
         }
+        keyMap.processSequenceKey(null, [], true);
     },
 
     processSequenceKey: function(event, keyCodes, forceDefault) {
@@ -333,6 +350,7 @@ exports.KeyMap.prototype = {
             map = this.sequenceMap;
             forcedDefault = true;
         }
+
         if (map && map != this.activeSequence) {
             if (this.activeSequence && this.activeSequence.bindings) {
                 _.each(this.activeSequence.bindings, function(fn) { fn(false); });
@@ -549,6 +567,14 @@ exports.KeyMap.prototype = {
 };
 
 // *************************************************************************************************
+
+function translateKey(keyCode) {
+    if (keyCode == 93) {
+        return 91;
+    } else {
+        return keyCode;
+    }
+}
 
 function identifyKey(name) {
     if (name.length > 1) {
