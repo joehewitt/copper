@@ -345,11 +345,11 @@ exports.KeyMap.prototype = {
             }
         }   
 
-        var forcedDefault = false;
         if (!map && forceDefault) {
             map = this.sequenceMap;
-            forcedDefault = true;
         }
+
+        var matchedDefault = map == this.sequenceMap;
 
         if (map && map != this.activeSequence) {
             if (this.activeSequence && this.activeSequence.bindings) {
@@ -364,12 +364,12 @@ exports.KeyMap.prototype = {
                     event.stopPropagation();            
                 }
 
-                this.modeKeysDown = !forcedDefault;
+                this.modeKeysDown = !matchedDefault;
 
                 _.each(map.bindings, function(fn) {
                     fn(true);
                 });
-                return !forcedDefault;
+                return !matchedDefault;
             }
         }
     },
