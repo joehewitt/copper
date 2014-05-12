@@ -1,7 +1,7 @@
 {
   "name": "copper",
   "description": "UI library based on ore.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "homepage": "http://github.com/joehewitt/copper",
   "keywords": [],
   "author": "Joe Hewitt <joe@joehewitt.com>",
@@ -13,8 +13,10 @@
   },
   "main": "./copper",
   "directories": {},
-  "engines": { "node": ">=0.4.0" },
+  "engines": {
+    "node": ">=0.4.0"
+  },
   "app.js": {
-      "static": "./static"
+    "static": "./static"
   }
 }
