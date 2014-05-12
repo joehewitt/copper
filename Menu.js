@@ -63,6 +63,8 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
             anchorBox.parent().append(this);
         }
 
+        this.updateCommands(this.list);
+
         var offset = anchorBox.offset();
         
         var anchorX = offset.left;
@@ -80,15 +82,17 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
         }
 
         var container = anchorBox.closest('.container');
-        return this.showAt(anchorX, anchorY, container);
+        return this.showAt(anchorX, anchorY, container, true);
     },
 
-    showAt: function(anchorX, anchorY, container) {
+    showAt: function(anchorX, anchorY, container, dontUpdateCommands) {
         if (!this.onMouseDown) {
             this.showing({target: this});
         }
 
-        this.updateHotKeys(this.list);
+        if (!dontUpdateCommands) {
+            this.updateCommands(this.list);
+        }
 
         this.originalParent = this.parent();
         if (!container) {
@@ -169,13 +173,15 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
         }, this), 100);
     },
 
-    updateHotKeys: function(page) {
+    updateCommands: function(page) {
         for (var parent = this; parent.length; parent = parent.parent()) {
             if (parent.keyManager) {
                 var keyManager = parent.keyManager;
                 page.query('.menu-item').each(_.bind(function(item) {
                     var command = item.cmd();
                     if (command) {
+                        item.html(command.title);
+
                         var hotKey = keyManager.findHotKey(command.id);
                         if (hotKey) {
                             item.hotKey = hotKey;
@@ -228,7 +234,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
 
     onNavigating: function(event) {
         if (!event.back) {
-            this.updateHotKeys(event.page);
+            this.updateCommands(event.page);
         }
     },
 

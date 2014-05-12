@@ -75,16 +75,23 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
 
         text = text.trim();
         if (text.length) {
-            var pattern = new RegExp(text.split('').join('.*?') + '.*?', 'i');
-
-            for (var i = 0, l = this.commands.length; i < l; ++i) {
-                var commands = this.commands[i];
-                var matches = commands.match(pattern);
-                newCommands = newCommands.concat(matches);
+            var pattern;
+            try {
+                pattern = new RegExp(text.split('').join('.*?') + '.*?', 'i');
+            } catch (exc) {
+                pattern = null;
+            }
+            
+            if (pattern) {
+                for (var i = 0, l = this.commands.length; i < l; ++i) {
+                    var commands = this.commands[i];
+                    var matches = commands.match(pattern);
+                    newCommands = newCommands.concat(matches);
+                }                
             }
 
             this.showResults(newCommands);
-            this.updateHotKeys(this.list);
+            this.updateCommands(this.list);
         } else if (this.defaultCommand) {
             this.empty();
             this.populate(this.defaultCommand.children);

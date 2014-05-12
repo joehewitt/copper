@@ -51,6 +51,8 @@ exports.KeyManager.namedKeys = {
     ALT: 19,
     CTRL: 17,
     CONTROL: 17,
+    SLASH: 191,
+    QUOTE: 222,
 };
 
 var modifierKeys =
@@ -638,6 +640,10 @@ function formatCombo(combo) {
         parts.push('&#8595;');
     } else if (combo.key == namedKeys.DEL || combo.key == namedKeys.BACKSPACE) {
         parts.push('⌫'); // &#x232b; – &#9003;
+    } else if (combo.key == namedKeys.SLASH) {
+        parts.push('/');
+    } else if (combo.key == namedKeys.QUOTE) {
+        parts.push('\'');
     } else if (combo.key) {
         parts.push(String.fromCharCode(combo.key));
     }

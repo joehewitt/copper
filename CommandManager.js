@@ -70,14 +70,20 @@ exports.CommandManager.prototype = {
 
     end: function() {
         this.stack.pop();
-        D&&D('end', this.stack.length);
+        D&&D('end', this.stack.length, this.history.length);
 
+        var oldHistory = this.history;
         this.history = this.stack[this.stack.length-1];
-
-        var state = this.history[this.history.length-1];
-        var onCancel = state.onCancel;
-        state.onCancel = null;
-        return onCancel;
+        if (!oldHistory.length) {
+            --this.historyCursor;
+            this._clipHistory();
+            --this.historyCursor;
+        } else {
+            var state = this.history[this.history.length-1];
+            var onCancel = state.onCancel;
+            state.onCancel = null;
+            return onCancel;
+        }
     },
 
     undoCommand: function() {
@@ -87,9 +93,9 @@ exports.CommandManager.prototype = {
         if (this.stack.length > 1) {
             while (this.stack.length > 1) {
                 var onCancel = this.end();
-                if (!onCancel || !onCancel()) {
+                if (!onCancel || !onCancel() && this.history.length) {
                     var state = this.history[this.history.length-1];
-                    for (var i = state.history.length-1; i >= 0; --i) {
+                    for (var i = state ? state.history.length-1 : -1; i >= 0; --i) {
                         this._undoState(state.history[i]);
                     }
                 }
@@ -123,7 +129,9 @@ exports.CommandManager.prototype = {
             var top = this.history[this.history.length-1];
             if (now - top.time < this.collapseTime) {
                 if (state.command && top.command && state.command.id == top.command.id) {
-                    return this._collapseStates(state, top);
+                    if (state.command.isCollapsible) {
+                        return this._collapseStates(state, top);                        
+                    }
                 }
             }
         }
@@ -318,11 +326,13 @@ exports.Command = function(properties) {
     this.hasUndo = !!properties.undo || !!properties.redo;
     this.hasChildren = !!properties.children;
     this.hasHover = !!properties.hover;
-    
+    this.isCollapsible = 'isCollapsible' in properties ? properties.isCollapsible : false;
+
     if ('isSearchable' in properties) {
         this.isSearchable = properties.isSearchable;    
     } else {
-        var doer = this._execute || this._save || this._redo;
+        // Only commands that take no parameters are searchable
+        var doer = this._execute || this._children || this._save || this._redo;
         this.isSearchable = doer && !doer.length;        
     }
 
@@ -392,16 +402,57 @@ Command.prototype = {
         }
     },    
 
+    each: function(zippedArgs, saveOnly) {
+        if (this.hasUndo) {
+            var save = this._save;
+            var self = this.self;
+            var substates = _.map(zippedArgs, function(args) {
+                D&&D('do it', args);
+                return save ? save.apply(self, args) : {redo: args.slice()};
+            });
+
+            var state = {command: this, substates: substates};
+            this.manager.pushState(state);
+
+            if (!saveOnly) {
+                this.redo(state);
+            }
+        }
+    },
+
     execute: function() { 
         if (this.hasUndo) {
-            var state = this.save.apply(this, arguments);
+            var state = {command: this};
+
             if (this._pre) {
                 this._pre.call(this.self);
             }
-            this._redo.apply(this.self, state.redo);
+            if (this._save) {
+                var saved = this._save.apply(this.self, arguments);
+                if (!saved) return;
+                state.redo = saved.redo;
+                state.undo = saved.undo || saved.redo;
+
+                this.manager.pushState(state);
+                this._redo.apply(this.self, saved.redo);
+            } else {
+                state.redo = Array.prototype.slice.call(arguments, 0);
+
+                this.manager.pushState(state);
+                state.undo = this._redo.apply(this.self, arguments);
+            }
             if (this._post) {
                 this._post.call(this.self);
             }
+
+            // var state = this.save.apply(this, arguments);
+            // if (this._pre) {
+            //     this._pre.call(this.self);
+            // }
+            // this._redo.apply(this.self, state.redo);
+            // if (this._post) {
+            //     this._post.call(this.self);
+            // }
         } else if (this._execute) {
             return this._execute.apply(this.self, arguments);
         }
@@ -418,20 +469,31 @@ Command.prototype = {
         }
     },
 
-    each: function(zippedArgs, saveOnly) {
+    redo: function(state) {
         if (this.hasUndo) {
-            var save = this._save;
-            var self = this.self;
-            var substates = _.map(zippedArgs, function(args) {
-                return save ? save.apply(self, args) : {redo: args};
-            });
-
-            var state = {command: this, substates: substates};
-            this.manager.pushState(state);
-
-            if (!saveOnly) {
-                this.redo(state);
+            if (this._pre) {
+                this._pre.apply(this.self);
             }
+
+            var self = this.self;
+            var doer = this._redo;
+            if (state.substates) {
+                _.each(state.substates, function(substate) {
+                    var undo = doer.apply(self, substate.redo);
+                    if (undo) {
+                        substate.undo = undo;
+                    }
+                });
+            } else {
+                var undo = doer.apply(self, state.redo);
+                if (undo) {
+                    state.undo = undo;
+                }
+            }
+
+            if (this._post) {
+                this._post.apply(this.self);
+            }            
         }
     },
 
@@ -457,28 +519,6 @@ Command.prototype = {
         }
     },
 
-    redo: function(state) {
-        if (this.hasUndo) {
-            if (this._pre) {
-                this._pre.apply(this.self);
-            }
-
-            var self = this.self;
-            var doer = this._redo;
-            if (state.substates) {
-                _.each(state.substates, function(substate) {
-                    doer.apply(self, substate.redo);
-                });
-            } else {
-                doer.apply(self, state.redo);
-            }
-
-            if (this._post) {
-                this._post.apply(this.self);
-            }            
-        }
-    },
-
     hover: function(hovered) {
         if (this._hover) {
             this._hover.apply(this.self, [hovered]);
@@ -489,7 +529,7 @@ Command.prototype = {
         if (this._copy) {
             return this._copy.apply(this.self, [doubleTap]);
         }
-    }    
+    },
 };
 
 // *************************************************************************************************

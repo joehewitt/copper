@@ -7,18 +7,26 @@ var Menu = require('./Menu').Menu;
 // *************************************************************************************************
 
 exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick: '$onClick',
+                                            onmouseup: '$onMouseUp',
                                             oncontextmenu: '$onContextMenu'}, [],
 {
     onMouseDown: function(event) {
         var button = $(event.target).closest('.button');
         if (button.length && !button.cssClass('disabled')) {
             if (button.attr('menu')) {
-                if (button.showMenu()) {
+                if (this.showingMenu = button.showMenu()) {
                     event.preventDefault();
                     event.stopPropagation();
                 }
             }
         }
+    },
+
+    onMouseUp: function(event) {
+        if (this.showingMenu && $(event.target).closest('.menu').equals(this.showingMenu)) {
+            this.showingMenu.enter();
+        }
+        this.showingMenu = null;
     },
 
     onClick: function(event) {

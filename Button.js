@@ -64,7 +64,7 @@ exports.Button = html.div('.button', {}, [
 
             this.addClass('depressed');
             menu.listen('hidden', onHidden);
-            return menu.show(this);
+            return menu.show(this) ? menu : null;
         }
     }
 });    
