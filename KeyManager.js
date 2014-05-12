@@ -53,6 +53,8 @@ exports.KeyManager.namedKeys = {
     CONTROL: 17,
     SLASH: 191,
     QUOTE: 222,
+    PLUS: 187,
+    MINUS: 189,
 };
 
 var modifierKeys =
@@ -644,6 +646,10 @@ function formatCombo(combo) {
         parts.push('/');
     } else if (combo.key == namedKeys.QUOTE) {
         parts.push('\'');
+    } else if (combo.key == namedKeys.PLUS) {
+        parts.push('+');
+    } else if (combo.key == namedKeys.MINUS) {
+        parts.push('-');
     } else if (combo.key) {
         parts.push(String.fromCharCode(combo.key));
     }

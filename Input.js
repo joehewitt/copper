@@ -21,7 +21,12 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
     // ---------------------------------------------------------------------------------------------
     
     get value() {
-        return parseFloat(this.val().value);
+        var value = parseFloat(this.val().value);
+        if (isNaN(value)) {
+            return 0;
+        } else {
+            return value;
+        }
     },
 
     set value(value) {
@@ -127,15 +132,18 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
     },
 
     onBlur: function() {
+        this.val().value = this.value;
         $(window).unlisten('mousewheel', this.onMouseWheel, true);
         delete this.onMouseWheel;
     },
 
     onInput: function(event) {
-        var newValue = this.value;
-        var constrainedValue = this.formatValue(newValue);
-        if (newValue != constrainedValue) {
-            this.value = constrainedValue; 
+        var newValue = parseFloat(this.val().value);
+        if (!isNaN(newValue)) {
+            var constrainedValue = this.formatValue(newValue);
+            if (newValue != constrainedValue) {
+                this.value = constrainedValue; 
+            }            
         }
         this.updated(this);
     },
