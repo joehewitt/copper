@@ -35,11 +35,15 @@ exports.Button = html.div('.button', {}, [
                 var menu = this.query('.menu', true);
                 return menu.length ? menu : null;
             } else {
-                var container = this.closest('.container');
-                if (!container.length) {
-                    container = $(document);
+                var menu = this.query(menuSelector, true);
+                if (!menu.length) {
+                    var container = this.closest('.container');
+                    if (!container.length) {
+                        container = $(document);
+                    }
+                    menu = container.query(menuSelector, true);
                 }
-                var menu = container.query(menuSelector, true);
+
                 return menu.length ? menu : null;
             }
         }

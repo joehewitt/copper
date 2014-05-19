@@ -113,9 +113,9 @@ exports.KeyManager.prototype = {
         var keyMaps = this._activeKeyMaps;
         for (var i = 0, l = keyMaps.length; i < l; ++i) {
             var keyMap = keyMaps[i];
-            var combo = keyMap.commandMap[commandId];
+            var combo = keyMap.findHotKey(commandId);
             if (combo) {
-                return formatCombo(combo);
+                return combo;
             }
         }
     },
@@ -464,6 +464,15 @@ exports.KeyMap.prototype = {
         }
     },
     
+    findHotKey: function(commandId) {        
+        var combo = this.commandMap[commandId];
+        if (combo) {
+            return formatCombo(combo);
+        }
+    },
+    
+    // ---------------------------------------------------------------------------------------------
+        
     _parseMap: function(source) {
         for (var i = 0; i < source.length; i += 2) {
             var keys = source[i];
