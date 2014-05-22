@@ -30,7 +30,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
     },
 
     set value(value) {
-        return this.val().value = value;
+        return this.val().value = this.formatValue(value);
     },
 
     get hotKeys() {
@@ -71,7 +71,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
 
     incrementNumber: function(increment) {
         if (this.increment !== undefined) {
-            this.value = this.formatValue(this.value+increment);
+            this.value = this.value+increment;
             this.updated(this);
         }
     },
@@ -92,7 +92,6 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
                 diff -= diff % this.increment;
                 
                 var newValue = startValue + diff;
-                newValue = this.formatValue(newValue);
 
                 this.value = newValue
                 this.updated(this);
@@ -132,19 +131,12 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
     },
 
     onBlur: function() {
-        this.val().value = this.value;
+        this.val().value = this.formatValue(this.val().value);
         $(window).unlisten('mousewheel', this.onMouseWheel, true);
         delete this.onMouseWheel;
     },
 
     onInput: function(event) {
-        var newValue = parseFloat(this.val().value);
-        if (!isNaN(newValue)) {
-            var constrainedValue = this.formatValue(newValue);
-            if (newValue != constrainedValue) {
-                this.value = constrainedValue; 
-            }            
-        }
         this.updated(this);
     },
 });    
