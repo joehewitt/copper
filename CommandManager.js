@@ -1,19 +1,134 @@
 
-var _ = require('underscore');
+var $ = require('ore'),
+    _ = require('underscore');
 
-var D = null;
+// var D = null;
 
 // *************************************************************************************************
 
 exports.CommandManager = function(container) {
+    this.container = container;
     this.history = [];
-    this.stack = [this.history];
+    this.groupStack = [];
+    this.maps = {};
 }
 
 exports.CommandManager.prototype = {
     isDoing: false,
     historyCursor: -1,
     collapseTime: 550,
+    
+    // ---------------------------------------------------------------------------------------------
+
+    didCommand: $.event.create(true),
+    redidCommand: $.event.create(true),
+    undidCommand: $.event.create(true),
+    collapsedCommand: $.event.create(true),
+    updatedCommand: $.event.create(true),
+
+    // ---------------------------------------------------------------------------------------------
+
+    createMap: function(name, creator, args) {
+        var defs = {};
+        var conditions = {};
+        var allArgs = [defs, conditions];
+        allArgs.push.apply(allArgs, args);
+        creator.apply(this, allArgs);
+
+        var commandMap = new CommandMap(name, defs, conditions, this);
+        this.maps[name] = commandMap;
+        return commandMap;
+    },
+
+    findMap: function(name) {
+        return this.maps[name];
+    },
+
+    validateCondition: function(conditionId, subtree) {
+        if (!subtree) {
+            subtree = this.container;
+        }
+        var condition = this.findCondition(conditionId);
+        if (condition) {
+            return this._validateCondition(condition, subtree);
+        }
+    },
+
+    _validateCondition: function(condition, subtree) {
+        var truth = condition && condition.validate ? condition.validate() : false;
+        var commands = condition.commands;
+        for (var i = 0, l = commands.length; i < l; ++i) {
+            var command = commands[i];
+            subtree.query('*[command="' + command.id + '"]').each(function(target) {
+                target.cssClass('disabled', !truth);
+            });
+        }
+        return truth;
+    },
+
+    validateConditions: function(subtree) {
+        var commands = this.container.commands;
+        if (commands) {
+            if (!subtree) {
+                subtree = this.container;
+            }
+            for (var name in commands.conditionMap) {
+                var condition = commands.conditionMap[name];
+                this._validateCondition(condition, subtree);
+            }
+        }
+    },
+
+    serialize: function() {
+        var commands = [];
+        for (var i = 0, l = this.history.length; i < l; ++i) {
+            var command = this.history[i];
+            var serialized = command.serialize();
+            serialized.id = command.id;
+            serialized.time = command.time;
+            commands[commands.length] = serialized;
+        }
+        return {cursor: this.historyCursor, commands: commands};
+    },
+
+    restore: function(serialized) {
+        var commands = serialized.commands;
+
+        this.historyCursor = serialized.cursor >= commands.length
+                             ? commands.length-1
+                             : serialized.cursor;
+
+        for (var i = 0, l = commands.length; i < l; ++i) {
+            var serialCommand = commands[i];
+            var commandType = this.find(serialCommand.id);
+            if (commandType) {
+                var command = commandType.restore(serialCommand);
+                command.id = serialCommand.id;
+                command.time = serialCommand.time;
+                this.history[this.history.length] = command;                
+            }
+        }
+    },
+
+    find: function(commandId) {
+        var parts = commandId.split('.');
+        var mapName = parts[0];
+        var commandName = parts[1];
+        var map = this.maps[mapName];
+        if (map) {
+            return map.find(mapName, commandName);
+        }
+    },
+
+    findCondition: function(conditionId) {
+        var parts = conditionId.split('.');
+        var mapName = parts[0];
+        var conditionName = parts[1];
+        var map = this.maps[mapName];
+        if (map) {
+            return map.findCondition(mapName, conditionName);
+        }
+    },
 
     // ---------------------------------------------------------------------------------------------
 
@@ -35,216 +150,250 @@ exports.CommandManager.prototype = {
     },
 
     get nextUndoTitle() {
-        var state = this.historyCursor >= 0 ? this.history[this.historyCursor] : null;
-        if (state) {
-            while (state && state.history) {
-                state = state.history[0];
+        var command = this.historyCursor >= 0 ? this.history[this.historyCursor] : null;
+        if (command) {
+            while (command && command.history) {
+                command = command.history[0];
             }
-            return state.title ? state.title() : state.command.title;
+            return command.title;
         }
     },
 
     get nextRedoTitle() {
-        var state = this.historyCursor < this.history.length-1
+        var command = this.historyCursor < this.history.length-1
             ? this.history[this.historyCursor+1] : null;
-        if (state) {
-            while (state && state.history) {
-                state = state.history[0];
+        if (command) {
+            while (command && command.history) {
+                command = command.history[0];
             }
-            return state.title ? state.title() : state.command.title;
+            return command.title;
         }
     },
 
     // ---------------------------------------------------------------------------------------------
 
     begin: function(onCancel) {
-        var newHistory = [];
-        var state = {history: newHistory, onCancel: onCancel};
-        this.pushState(state);
+        this.groupStack[this.groupStack.length] = {last: null, onCancel: onCancel};
 
-        this.stack.push(newHistory);
-        D&&D('begin', this.stack.length);
-
-        this.history = newHistory;
+        D&&D('begin', this.groupStack.length);
     },
 
     end: function() {
-        this.stack.pop();
-        D&&D('end', this.stack.length, this.history.length);
-
-        var oldHistory = this.history;
-        this.history = this.stack[this.stack.length-1];
-        if (!oldHistory.length) {
-            --this.historyCursor;
-            this._clipHistory();
-            --this.historyCursor;
-        } else {
-            var state = this.history[this.history.length-1];
-            var onCancel = state.onCancel;
-            state.onCancel = null;
-            return onCancel;
-        }
+        var group = this.groupStack.pop();
+        D&&D('end', this.groupStack.length);
+        return group.onCancel;
     },
 
-    undoCommand: function() {
-        if (this.isDoing) return;
-        this.isDoing = true;
-
-        if (this.stack.length > 1) {
-            while (this.stack.length > 1) {
-                var onCancel = this.end();
-                if (!onCancel || !onCancel() && this.history.length) {
-                    var state = this.history[this.history.length-1];
-                    for (var i = state ? state.history.length-1 : -1; i >= 0; --i) {
-                        this._undoState(state.history[i]);
-                    }
-                }
-            }
-            // Discard the state for the incomplete history so it can't be redone
-            this.history.pop();
-            --this.historyCursor;
-        } else {
-            var state = this.history[this.historyCursor--];
-            this._undoState(state);
-        }
-        this.isDoing = false;
-    },
-
-    redoCommand: function() {
-        if (this.isDoing) return;
-        this.isDoing = true;
-
-        if (this.stack.length == 1) {
-            var state = this.history[++this.historyCursor];
-            this._redoState(state);
-        }
-        this.isDoing = false;
-    },
-
-    pushState: function(state) {
+    doCommand: function(command) {
         var now = Date.now();
-        state.time = now;
+        var collapseCommand = this.shouldCollapse(command, now);
+        if (collapseCommand) {
+            D&&D('collapse', command.id);
 
-        if (!this._clipHistory() && this.history.length) {
-            var top = this.history[this.history.length-1];
-            if (now - top.time < this.collapseTime) {
-                if (state.command && top.command && state.command.id == top.command.id) {
-                    if (state.command.isCollapsible) {
-                        return this._collapseStates(state, top);                        
-                    }
+            --this.historyCursor;
+            this.collapseCommand(collapseCommand, command);
+        } else {
+            command.time = now;
+
+            command.pre();
+            if (command.save && command.save() === true) {
+                return;
+            }
+
+            var related = !!command.related;
+            if (related) {
+                --this.historyCursor;
+                this.begin();
+                command.related();
+                ++this.historyCursor;
+            }
+
+            for (var i = 0, l = this.groupStack.length; i < l; ++i) {
+                var group = this.groupStack[i];
+                if (group.last) {
+                    group.last.next = command;
+                    command.previous = group.last;
+                }
+                group.last = command;
+            }
+
+            this.history[this.history.length] = command;        
+            D&&D('do', command.id, this.historyCursor + '/' + this.history.length
+                  + '/' + this.groupStack.length);
+
+            command.redo();
+            command.post();
+
+            this.didCommand({command: command, cursor: this.historyCursor});
+
+            if (related) {
+                this.end();
+            }
+        }
+    },
+
+    collapseCommand: function(collapseCommand, command, now) {
+        collapseCommand.time = now || Date.now();
+        collapseCommand.pre();
+        collapseCommand.collapse(command);
+        collapseCommand.post();
+
+        this.collapsedCommand({command: collapseCommand, cursor: this.historyCursor});
+    },
+
+    updateCommand: function(command, now) {
+        command.time = now || Date.now();
+        command.post();
+
+        this.updatedCommand({command: command, cursor: this.historyCursor});
+    },
+
+    undoCommand: function(shouldntUndoGroups) {
+        if (this.isDoing) return;
+        this.isDoing = true;
+
+        if (this.groupStack.length) {
+            while (this.groupStack.length > 1) {
+                var onCancel = this.end();
+                if (onCancel) {
+                    onCancel();
                 }
             }
         }
 
-        this.history.push(state);
-        D&&D('do', state.command ? state.command.id : '',
-             this.historyCursor + '/' + this.stack.length);
+        while (this.historyCursor >= 0) {
+            var command = this.history[this.historyCursor--];
+            this._undoState(command);
+            command = command.previous;
+            if (!command || shouldntUndoGroups) {
+                break;
+            }
+        }
+
+        this.isDoing = false;
+    },
+
+    redoCommand: function(shouldntUndoGroups) {
+        if (this.isDoing) return;
+        this.isDoing = true;
+
+        while (1) {
+            var command = this.history[++this.historyCursor];
+            this._redoState(command);
+            command = command.next;
+            if (!command || shouldntUndoGroups) {
+                break;
+            }
+        }
+
+        this.isDoing = false;
+    },
+
+    shouldCollapse: function(command, now) {
+        if (!this._clipHistory() && this.history.length && command.isCollapsible) {
+            var topCommand = this.history[this.history.length-1];
+            if (topCommand && command.id == topCommand.id) {
+                if (now - topCommand.time < this.collapseTime) {
+                    return topCommand;
+                }
+            }
+        }        
     },
 
     // ---------------------------------------------------------------------------------------------
 
     _clipHistory: function() {
-        if (this.stack.length == 1) {
-            var cursor = ++this.historyCursor;
-            if (cursor < this.history.length) {
-                this.history = this.stack[0] = this.history.slice(0, cursor);
-                return true;
-            }
+        var cursor = ++this.historyCursor;
+        if (cursor < this.history.length) {
+            this.history = this.history.slice(0, cursor);
+            return true;
         }
     },
 
-    _undoState: function(state) {
-        D&&D('undo', state.command ? state.command.id : '',
-             this.historyCursor + '/' + this.stack.length);
+    _undoState: function(command) {
+        D&&D('undo', command.id, this.historyCursor + '/' + this.history.length
+              + '/' + this.groupStack.length);
 
-        if (state.command) {
-            state.command.undo(state);
-        } else if (state.history) {
-            for (var i = state.history.length-1; i >= 0; --i) {
-                this._undoState(state.history[i]);
-            }
-        }        
-    },
-
-    _redoState: function(state) {
-        D&&D('redo', state.command ? state.command.id : '',
-             this.historyCursor + '/' + this.stack.length);
-
-        if (state.command) {
-            state.command.redo(state);
-        } else if (state.history) {
-            for (var i = 0, l = state.history.length; i < l; ++i) {
-                this._redoState(state.history[i]);
-            }
-        }        
-    },
-
-    _collapseStates: function(state, topState) {
-        D&&D('collapse', state.command.id);
-
-        if (this.stack.length == 1) {
-            --this.historyCursor;
-        }
-        
-        topState.time = state.time;
-        if (state.substates) {
-            for (var i = 0, l = state.substates.length; i < l; ++i) {
-                topState.substates[i].redo = state.substates[i].redo;                        
+        if (command.history) {
+            for (var i = command.history.length-1; i >= 0; --i) {
+                this._undoState(command.history[i]);
             }
         } else {
-            topState.redo = state.redo;
-        }
+            command.pre();
+            command.undo();
+            command.post();
+        }        
+
+        this.undidCommand({command: command, cursor: this.historyCursor});
+    },
+
+    _redoState: function(command) {
+        D&&D('redo', command.id, this.historyCursor + '/' + this.history.length
+              + '/' + this.groupStack.length);
+
+        if (command.history) {
+            for (var i = 0, l = command.history.length; i < l; ++i) {
+                this._redoState(command.history[i]);
+            }
+        } else {
+            command.pre();
+            command.redo();
+            command.post();
+        }        
+
+        this.redidCommand({command: command, cursor: this.historyCursor});
     },
 };
 
 // *************************************************************************************************
 
-exports.CommandMap = function(self, manager, definitions) {
+var CommandMap =
+exports.CommandMap = function(name, defs, conditions, manager) {
+    this.name = name;
+    this.defs = defs;
     this.manager = manager;
-
-    var map = this.map = {};
+    var container = manager.container;
     var conditionMap = this.conditionMap = {};
 
-    for (var commandName in definitions) {
-        var definition = definitions[commandName];
-        var implementation = self[commandName];
+    for (var conditionName in conditions) {
+        var fn = conditions[conditionName];
+        this.conditionMap[conditionName] = {validate: fn, commands: []};
+    }
 
-        var command = CMD(implementation, self, definition);
-        command.id = commandName;
+    for (var commandName in defs) {
+        var command = defs[commandName];
+        command.id = name + '.' + commandName;
+        command.map = this;
         command.manager = manager;
-        map[commandName] = command
-        
-        if (command.hasUndo) {
-            var wrapped = wrapUndoable(command);
-            wrapped.save = _.bind(command.save, command);
-            wrapped.each = _.bind(command.each, command);
-            self[commandName] = wrapped;
-        }
 
-        var conditionId = command.conditionId;
-        if (conditionId) {
-            if (conditionId in conditionMap) {
-                conditionMap[conditionId].commands.push(command)
-            } else {
-                conditionMap[conditionId] = {validate: command._validate, commands: [command]};
+        container[commandName] = _.bind(command.doIt, command);
+
+        var conditionName = command.condition;
+        if (conditionName) {
+            if (conditionName in conditionMap) {
+                conditionMap[conditionName].commands.push(command);
             }
         }
     }
 };
 
-function wrapUndoable(command) {
-    return function() {
-        command.execute.apply(command, arguments);
-    }
-}
-
 exports.CommandMap.prototype = {
-    find: function(name) {
-        var found = this.nextMap ? this.nextMap.find(name) : null;
-        if (!found && name in this.map) {
-            found = this.map[name]
+    find: function(mapName, commandName) {
+        if (mapName == this.name) {
+            return this.defs[commandName];
+        } else {
+
         }
-        return found;
+        return this.nextMap ? this.nextMap.find(mapName, commandName) : null;
+    },
+
+    findCondition: function(mapName, conditionName) {
+        if (mapName == this.name) {
+            return this.conditionMap[conditionName];
+        } else {
+
+        }
+        return this.nextMap ? this.nextMap.findCondition(mapName, conditionName) : null;
     },
 
     match: function(pattern) {
@@ -258,8 +407,8 @@ exports.CommandMap.prototype = {
                 matchMap(map.nextMap);
             }
     
-            for (var name in map.map) {
-                var command = map.map[name];
+            for (var name in map.defs) {
+                var command = map.defs[name];
                 if (command.isSearchable) {
                     var title = command.title;
                     if (title) {
@@ -299,294 +448,3 @@ exports.CommandMap.prototype = {
         }
     },
 };
-
-
-// *************************************************************************************************
-
-var Command = 
-exports.Command = function(properties) {
-    this.self = properties.self || this;
-
-    this._title = properties.title;
-    this._value = properties.value;
-    this._className = properties.className;
-
-    this._execute = properties.execute;
-    this._save = properties.save;
-    this._pre = properties.pre;
-    this._post = properties.post;
-    this._redo = properties.redo;
-    this._undo = properties.undo;
-    this._children = properties.children;
-    this._actions = properties.actions;
-    
-    this._hover = properties.hover;
-    this._copy = properties.copy;
-
-    this.hasUndo = !!properties.undo || !!properties.redo;
-    this.hasChildren = !!properties.children;
-    this.hasHover = !!properties.hover;
-    this.isCollapsible = 'isCollapsible' in properties ? properties.isCollapsible : false;
-
-    if ('isSearchable' in properties) {
-        this.isSearchable = properties.isSearchable;    
-    } else {
-        // Only commands that take no parameters are searchable
-        var doer = this._execute || this._children || this._save || this._redo;
-        this.isSearchable = doer && !doer.length;        
-    }
-
-    if (typeof(properties.validate) == 'string') {
-        this.conditionId = properties.validate;
-        this._validate = _.bind(this.self[properties.validate], this.self);
-    } else {
-        this.conditionId = null;
-        this._validate = properties.validate;
-    }
-}
-
-Command.prototype = {
-    get value() { 
-        if (this._value) {
-            return this._value.apply(this.self);
-        }
-    },    
-
-    get title() { 
-        if (typeof(this._title) == 'function') {
-            return this._title.apply(this.self, [this.value]);
-        } else {
-            return this._title;
-        }
-    },
-
-    get caption() { 
-        if (typeof(this._caption) == 'function') {
-            return this._caption.apply(this.self, [this.value]);
-        } else {
-            return '';
-        }
-    },    
-
-    get className() { 
-        if (typeof(this._className) == 'function') {
-            return this._className.apply(this.self, [this.value]);
-        } else {
-            return this._className;
-        }
-    },    
-
-    get actions() { 
-        if (typeof(this._actions) == 'function') {
-            return this._actions.apply(this.self, [this.value]);
-        } else if (this._actions instanceof Array) {
-            return expandCommands(this._actions, this.self);
-        }
-    },    
-
-    get children() { 
-        if (typeof(this._children) == 'function') {
-            return this._children.apply(this.self, [this.value]);
-        } else if (this._children instanceof Array) {
-            return expandCommands(this._children, this.self);
-        }
-    },    
-
-    // ---------------------------------------------------------------------------------------------
-    
-    validate: function() { 
-        if (this._validate) {
-            return this._validate.apply(this.self, [this.value]);
-        } else {
-            return true;
-        }
-    },    
-
-    each: function(zippedArgs, saveOnly) {
-        if (this.hasUndo) {
-            var save = this._save;
-            var self = this.self;
-            var substates = _.map(zippedArgs, function(args) {
-                D&&D('do it', args);
-                return save ? save.apply(self, args) : {redo: args.slice()};
-            });
-
-            var state = {command: this, substates: substates};
-            this.manager.pushState(state);
-
-            if (!saveOnly) {
-                this.redo(state);
-            }
-        }
-    },
-
-    execute: function() { 
-        if (this.hasUndo) {
-            var state = {command: this};
-
-            if (this._pre) {
-                this._pre.call(this.self);
-            }
-            if (this._save) {
-                var saved = this._save.apply(this.self, arguments);
-                if (!saved) return;
-                state.redo = saved.redo;
-                state.undo = saved.undo || saved.redo;
-
-                this.manager.pushState(state);
-                this._redo.apply(this.self, saved.redo);
-            } else {
-                state.redo = Array.prototype.slice.call(arguments, 0);
-
-                this.manager.pushState(state);
-                state.undo = this._redo.apply(this.self, arguments);
-            }
-            if (this._post) {
-                this._post.call(this.self);
-            }
-
-            // var state = this.save.apply(this, arguments);
-            // if (this._pre) {
-            //     this._pre.call(this.self);
-            // }
-            // this._redo.apply(this.self, state.redo);
-            // if (this._post) {
-            //     this._post.call(this.self);
-            // }
-        } else if (this._execute) {
-            return this._execute.apply(this.self, arguments);
-        }
-    },
-
-    save: function() { 
-        if (this.hasUndo) {
-            var state = this._save
-                ? this._save.apply(this.self, arguments)
-                : {redo: Array.prototype.slice.call(arguments, 0) };
-            state.command = this;
-            this.manager.pushState(state);
-            return state;
-        }
-    },
-
-    redo: function(state) {
-        if (this.hasUndo) {
-            if (this._pre) {
-                this._pre.apply(this.self);
-            }
-
-            var self = this.self;
-            var doer = this._redo;
-            if (state.substates) {
-                _.each(state.substates, function(substate) {
-                    var undo = doer.apply(self, substate.redo);
-                    if (undo) {
-                        substate.undo = undo;
-                    }
-                });
-            } else {
-                var undo = doer.apply(self, state.redo);
-                if (undo) {
-                    state.undo = undo;
-                }
-            }
-
-            if (this._post) {
-                this._post.apply(this.self);
-            }            
-        }
-    },
-
-    undo: function(state) {
-        if (this.hasUndo) {
-            if (this._pre) {
-                this._pre.call(this.self, true);
-            }
-
-            var self = this.self;
-            var doer = this._undo || this._redo;
-            if (state.substates) {
-                _.each(state.substates, function(substate) {
-                    doer.apply(self, substate.undo || substate.redo);
-                });
-            } else {
-                doer.apply(self, state.undo || state.redo);
-            }
-
-            if (this._post) {
-                this._post.call(this.self, true);
-            }            
-        }
-    },
-
-    hover: function(hovered) {
-        if (this._hover) {
-            this._hover.apply(this.self, [hovered]);
-        }
-    },
-
-    copy: function(doubleTap) {
-        if (this._copy) {
-            return this._copy.apply(this.self, [doubleTap]);
-        }
-    },
-};
-
-// *************************************************************************************************
-
-var CMD =
-exports.CMD = function(implementation, self, properties) {
-    var props = {self: self};
-    if (properties) {
-        props = _.extend(props, properties);
-    }        
-    if (typeof(implementation) == 'function') {
-        props.execute = implementation;
-    } else {
-        props = _.extend(props, implementation);
-    }
-
-    return new Command(props);
-}
-
-var SEPARATOR =
-exports.CMD.SEPARATOR = {};
-
-// *************************************************************************************************
-
-function expandCommands(menuData, self) {
-    var commands = [];
-    var needSeparator = false;
-    for (var i = 0, l = menuData.length; i < l; ++i) {
-        var name = menuData[i];
-        var children = menuData[i+1];
-        if (children instanceof Array) {
-            if (needSeparator) {
-                commands.push(SEPARATOR);
-                needSeparator = false;
-            }
-            var command = expandCommand(name, children);
-            commands.push(command);
-            ++i;
-        } else if (name == '-') {
-            needSeparator = true;
-        } else  {
-            var command = self.cmd(undefined, name);
-            if (command) {
-                if (needSeparator) {
-                    commands.push(SEPARATOR);
-                    needSeparator = false;
-                }
-                commands.push(command);
-            }
-        }
-    }
-    return commands;
-
-    function expandCommand(name, children) {
-        return CMD(null, self, {
-            title: name,
-            children: children,
-        });
-    }
-}

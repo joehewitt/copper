@@ -64,5 +64,5 @@ exports.Dropdown = Button('.dropdown', {menu: 'self'}, [
 // *************************************************************************************************
 
 function escapeValue(value) {
-    return value.replace(/"/g, '\\"');
+    return value ? value.replace(/"/g, '\\"') : '';
 }

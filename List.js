@@ -141,7 +141,7 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
         } else {
             var evt = {target: item, command: command};
             if (command) {
-                command.execute(evt);
+                command.doIt();
             }
             if (!evt.prevent && typeof(item.commanded) == 'function') {
                 item.commanded(evt);
@@ -172,10 +172,14 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
 
         for (var i = 0, l = commands.length; i < l; ++i) {
             var command = commands[i];
-            if (command == CMD.SEPARATOR) {
+            if (command == '-') {
                 var separator = new separatorType();
                 this.append(separator);
-            } else {
+            } else if (command) {
+                if (typeof(command) == 'string') {
+                    var c = command;
+                    command = this.cmd(undefined, c);
+                }
                 var className = command.className;
                 if (className == 'info') {
                     var item = new html.div()

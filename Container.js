@@ -11,12 +11,14 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
                                             oncontextmenu: '$onContextMenu'}, [],
 {
     onMouseDown: function(event) {
-        var button = $(event.target).closest('.button');
-        if (button.length && !button.cssClass('disabled')) {
-            if (button.attr('menu')) {
-                if (this.showingMenu = button.showMenu()) {
-                    event.preventDefault();
-                    event.stopPropagation();
+        if (event.detail == 1) {        
+            var button = $(event.target).closest('.button');
+            if (button.length && !button.cssClass('disabled')) {
+                if (button.attr('menu')) {
+                    if (this.showingMenu = button.showMenu()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
                 }
             }
         }
@@ -43,7 +45,7 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
                 } else {             
                     var command = button.cmd();
                     if (command) {
-                        command.execute(event);
+                        command.doIt();
                     }
                 }
             }
@@ -67,7 +69,7 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
                         menu.remove();
                     });
                     menu.populate(commands);
-                    menu.showAt(event.pageX, event.pageY ,this);
+                    menu.showAt(event.pageX, event.pageY, this);
                 }
 
                 event.stopPropagation();

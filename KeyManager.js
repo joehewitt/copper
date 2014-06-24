@@ -2,7 +2,7 @@
 var _ = require('underscore'),
     $ = require('ore');
 
-var Command = require('./CommandManager').Command;
+var Command = require('./Command').Command;
 
 // *************************************************************************************************
 
@@ -610,7 +610,7 @@ function wrapHandler(handler) {
     if (handler instanceof Command) {
         return function(event) {
             if (handler.validate()) {
-                return handler.execute.apply(handler, arguments);
+                return handler.doIt.apply(handler);
             }
         }
     } else {
