@@ -11,7 +11,8 @@ exports.Tree = html.div('.tree', {onmousedown: '$onMouseDown'}, [
     ])
 ], {
     selectedItems: null,
-    
+    shouldUnselectBackground: true,
+
     selectitem: $.event,
 
     // ---------------------------------------------------------------------------------------------
@@ -84,7 +85,9 @@ exports.Tree = html.div('.tree', {onmousedown: '$onMouseDown'}, [
             this.toggleItemRange(item);
             event.preventDefault();
         } else if (!item.cssClass('selected')) {
-            this.selectItem(item);
+            if (item.length || this.shouldUnselectBackground) {
+                this.selectItem(item);
+            }
         }
     },
 });
