@@ -30,7 +30,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
     },
 
     set value(value) {
-        return this.val().value = this.formatValue(value);
+        return this.val().value = value;
     },
 
     get hotKeys() {
@@ -46,6 +46,10 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
 
     // ---------------------------------------------------------------------------------------------
 
+    reformat: function(value) {
+        return Math.round(value*this.rounding)/this.rounding;        
+    },
+
     formatValue: function(value) {
         if (this.min !== undefined) {
             value = Math.max(value, this.min);
@@ -57,7 +61,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
             value -= value % this.increment;
         }
 
-        var value = Math.round(value*this.rounding)/this.rounding;
+        var value = this.reformat(value);
         if (isNaN(value)) {
             if (this.min !== undefined) {
                 return this.min;
@@ -71,7 +75,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
 
     incrementNumber: function(increment) {
         if (this.increment !== undefined) {
-            this.value = this.value+increment;
+            this.value += increment;
             this.updated(this);
         }
     },
@@ -92,8 +96,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
                 diff -= diff % this.increment;
                 
                 var newValue = startValue + diff;
-
-                this.value = newValue
+                this.value = this.formatValue(newValue);
                 this.updated(this);
             }, this);
 
@@ -131,7 +134,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
     },
 
     onBlur: function() {
-        this.val().value = this.formatValue(this.val().value);
+        this.value = this.formatValue(this.val().value);
         $(window).unlisten('mousewheel', this.onMouseWheel, true);
         delete this.onMouseWheel;
     },
