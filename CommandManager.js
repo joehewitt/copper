@@ -86,6 +86,9 @@ exports.CommandManager.prototype = {
             var serialized = command.serialize();
             serialized.id = command.id;
             serialized.time = command.time;
+            if (command.previous) {
+                serialized.previous = true;
+            }
             commands[commands.length] = serialized;
         }
         return {cursor: this.historyCursor, commands: commands};
@@ -98,6 +101,7 @@ exports.CommandManager.prototype = {
                              ? commands.length-1
                              : serialized.cursor;
 
+        var previous;
         for (var i = 0, l = commands.length; i < l; ++i) {
             var serialCommand = commands[i];
             var commandType = this.find(serialCommand.id);
@@ -105,7 +109,12 @@ exports.CommandManager.prototype = {
                 var command = commandType.restore(serialCommand);
                 command.id = serialCommand.id;
                 command.time = serialCommand.time;
-                this.history[this.history.length] = command;                
+                if (serialCommand.previous && previous) {
+                    previous.next = command;
+                    command.previous = previous;
+                }
+                this.history[this.history.length] = command;
+                previous = command;
             }
         }
     },
