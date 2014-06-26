@@ -14,8 +14,11 @@ var KeyMap = require('./KeyManager').KeyMap,
 
 exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
                                            onshown: '$onMenuShown', onpushed: '$onPushed',
-                                           onnavigated: '$onNavigated'}, [
+                                           onnavigated: '$onNavigated',
+                                           ondragstart: '$onDragStart'}, [
 ], {
+    expressionsearched: $.event,
+
     get value() {
         return this.input.val().value;
     },
@@ -75,23 +78,28 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
 
         text = text.trim();
         if (text.length) {
-            var pattern;
-            try {
-                pattern = new RegExp(text.split('').join('.*?') + '.*?', 'i');
-            } catch (exc) {
-                pattern = null;
-            }
-            
-            if (pattern) {
-                for (var i = 0, l = this.commands.length; i < l; ++i) {
-                    var commands = this.commands[i];
-                    var matches = commands.match(pattern);
-                    newCommands = newCommands.concat(matches);
-                }                
+            if (text[0] == '=') {
+                this.expressionsearched({expression: text.slice(1), results: newCommands});
+            } else {
+                var pattern;
+                try {
+                    pattern = new RegExp(text.split('').join('.*?') + '.*?', 'i');
+                } catch (exc) {
+                    pattern = null;
+                }
+                
+                if (pattern) {
+                    for (var i = 0, l = this.commands.length; i < l; ++i) {
+                        var commands = this.commands[i];
+                        var matches = commands.match(pattern);
+                        newCommands = newCommands.concat(matches);
+                    }                
+                }
+
             }
 
             this.showResults(newCommands);
-            this.updateCommands(this.list);
+            this.updateCommands(this.list);                
         } else if (this.defaultCommand) {
             this.empty();
             this.populate(this.defaultCommand.children);
@@ -119,6 +127,7 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
     },
 
     showResults: function(commands, selectedCommand) {
+        this.list.select();
         this.empty();
         this.populate(commands, selectedCommand, true);
         if (!selectedCommand) {
@@ -163,6 +172,18 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
     onMenuShown: function(event) {
         this.input.focus();
     },
+
+    onDragStart: function(event) {
+        var item = $(event.target).closest('.list-item');
+        var command = item.cmd();
+        if (command && command.drag) {
+            if (command.drag(event.dataTransfer)) {
+                event.dataTransfer.setDragImage(item.nodes[0], 0, 0);                
+                return;
+            }
+        }
+        event.preventDefault();
+    }
 });    
 
 // *************************************************************************************************

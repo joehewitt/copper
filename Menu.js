@@ -119,7 +119,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
                     event.stopPropagation();
                     this.hide();
                 }
-                event.preventDefault();
+                // event.preventDefault();
             }, this);
             this.onMouseMove = _.bind(function(event) {
                 if (!$(event.target).closest('.menu').equals(this)) {
@@ -248,7 +248,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
 // *************************************************************************************************
 
 var MenuItem =
-exports.MenuItem = ListItem('.menu-item', {}, [
+exports.MenuItem = ListItem('.menu-item', {draggable: 'true'}, [
     html.HERE,
 ]);    
 
