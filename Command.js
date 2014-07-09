@@ -20,7 +20,8 @@ Command.prototype = {
     related: null,
     undo: null,
     redo: null,
-
+    drag: null,
+    
     get sentence() {
         return [this.title];
     },

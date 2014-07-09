@@ -54,18 +54,6 @@ exports.CommandManager.prototype = {
         }
     },
 
-    _validateCondition: function(condition, subtree) {
-        var truth = condition && condition.validate ? condition.validate() : false;
-        var commands = condition.commands;
-        for (var i = 0, l = commands.length; i < l; ++i) {
-            var command = commands[i];
-            subtree.query('*[command="' + command.id + '"]').each(function(target) {
-                target.cssClass('disabled', !truth);
-            });
-        }
-        return truth;
-    },
-
     validateConditions: function(subtree) {
         var commands = this.container.commands;
         if (commands) {
@@ -205,6 +193,9 @@ exports.CommandManager.prototype = {
             command.time = now;
 
             command.pre();
+
+            this._evaluateCommand(command);
+
             if (command.save && command.save() === true) {
                 return;
             }
@@ -288,6 +279,7 @@ exports.CommandManager.prototype = {
 
         while (1) {
             var command = this.history[++this.historyCursor];
+            this._evaluateCommand(command);
             this._redoState(command);
             command = command.next;
             if (!command || shouldntUndoGroups) {
@@ -351,6 +343,27 @@ exports.CommandManager.prototype = {
         }        
 
         this.redidCommand({command: command, cursor: this.historyCursor});
+    },
+
+    _evaluateCommand: function(command) {
+        if (command.expressions) {
+            for (var name in command.expressions) {
+                var expr = command.expressions[name];
+                command[name] = command.evaluate(expr);
+            }                
+        }        
+    },
+
+    _validateCondition: function(condition, subtree) {
+        var truth = condition && condition.validate ? condition.validate() : false;
+        var commands = condition.commands;
+        for (var i = 0, l = commands.length; i < l; ++i) {
+            var command = commands[i];
+            subtree.query('*[command="' + command.id + '"]').each(function(target) {
+                target.cssClass('disabled', !truth);
+            });
+        }
+        return truth;
     },
 };
 
