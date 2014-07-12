@@ -4,8 +4,7 @@ var _ = require('underscore'),
     html = require('ore/html');
 
 var KeyMap = require('./KeyManager').KeyMap,
-    BINDKEY = require('./KeyManager').BINDKEY,
-    CMD = require('./CommandManager').CMD;
+    BINDKEY = require('./KeyManager').BINDKEY;
 
 // *************************************************************************************************
 
@@ -46,7 +45,7 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
         previousItems.removeClass('selected').each(function(item) {
             var command = item.cmd();
             if (command) {
-                command.hover(false);
+                command.highlight(false);
             }
             hadSelection = true;
         });
@@ -54,7 +53,7 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
             item.addClass('selected').each(function(item) {
                 var command = item.cmd();
                 if (command) {
-                    command.hover(true);
+                    command.highlight(true);
                 }
             });
             this.selected({target: item});

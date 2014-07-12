@@ -9,8 +9,7 @@ var KeyMap = require('./KeyManager').KeyMap,
     List = require('./List').List,
     ListItem = require('./List').ListItem,
     ListSeparator = require('./List').ListSeparator,
-    NumericInput = require('./Input').NumericInput,
-    CMD = require('./CommandManager').CMD;
+    NumericInput = require('./Input').NumericInput;
 
 // *************************************************************************************************
 

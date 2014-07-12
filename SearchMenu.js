@@ -17,7 +17,7 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
                                            onnavigated: '$onNavigated',
                                            ondragstart: '$onDragStart'}, [
 ], {
-    expressionsearched: $.event,
+    searched: $.event,
 
     get value() {
         return this.input.val().value;
@@ -48,8 +48,6 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
     // ore.Tag
 
     construct: function() {
-        this.commands = [];
-
         var inputBox = new SearchMenuInputBox();
         this.input = inputBox.query('.search-menu-input');
         this.input.listen('input', _.bind(this.onInput, this));
@@ -78,51 +76,12 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
 
         text = text.trim();
         if (text.length) {
-            if (text[0] == '=') {
-                this.expressionsearched({expression: text.slice(1), results: newCommands});
-            } else {
-                var pattern;
-                try {
-                    pattern = new RegExp(text.split('').join('.*?') + '.*?', 'i');
-                } catch (exc) {
-                    pattern = null;
-                }
-                
-                if (pattern) {
-                    for (var i = 0, l = this.commands.length; i < l; ++i) {
-                        var commands = this.commands[i];
-                        var matches = commands.match(pattern);
-                        newCommands = newCommands.concat(matches);
-                    }                
-                }
-
-            }
-
+            this.searched({text: text, results: newCommands});
             this.showResults(newCommands);
             this.updateCommands(this.list);                
         } else if (this.defaultCommand) {
             this.empty();
             this.populate(this.defaultCommand.children);
-        }
-    },
-
-    addCommands: function(commands) {
-        this.commands.push(commands);
-    },
-
-    removeCommands: function(commands) {
-        var index = this.commands.indexOf(commands);
-        if (index >= 0) {
-            this.commands.splice(index, 1);
-        }
-    },
-
-    findCommand: function(name) {
-        for (var i = this.commands.length-1; i >= 0; --i) {
-            var cmd = this.commands[i][name];
-            if (cmd) {
-                return cmd;
-            }
         }
     },
 
@@ -176,7 +135,7 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
     onDragStart: function(event) {
         var item = $(event.target).closest('.list-item');
         var command = item.cmd();
-        if (command && command.drag) {
+        if (command && command.hasDrag) {
             if (command.drag(event.dataTransfer)) {
                 event.dataTransfer.setDragImage(item.nodes[0], 0, 0);                
                 return;
