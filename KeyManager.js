@@ -2,8 +2,6 @@
 var _ = require('underscore'),
     $ = require('ore');
 
-var Command = require('./Command').Command;
-
 // *************************************************************************************************
 
 exports.KeyManager = function(rootElement) {
@@ -477,7 +475,7 @@ exports.KeyMap.prototype = {
         for (var i = 0; i < source.length; i += 2) {
             var keys = source[i];
             var handler = source[i+1];
-            var commandId = handler instanceof Command ? handler.id : null;
+            var commandId = typeof(handler) == 'function' ? null : handler.id;
 
             if (keys == "+") {
                 this.override = wrapHandler(handler);
@@ -607,15 +605,15 @@ function identifyKey(name) {
 }
 
 function wrapHandler(handler) {
-    if (handler instanceof Command) {
+    if (typeof(handler) == 'function') {
+        return function(event) {
+            return handler.apply(self, arguments);
+        }
+    } else {
         return function(event) {
             if (handler.validate()) {
                 return handler.doIt.apply(handler);
             }
-        }
-    } else {
-        return function(event) {
-            return handler.apply(self, arguments);
         }
     }
 }

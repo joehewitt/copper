@@ -11,7 +11,7 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
                                             oncontextmenu: '$onContextMenu'}, [],
 {
     onMouseDown: function(event) {
-        if (event.detail == 1) {        
+        if (event.button == 0) {
             var button = $(event.target).closest('.button');
             if (button.length && !button.cssClass('disabled')) {
                 if (button.attr('menu')) {
