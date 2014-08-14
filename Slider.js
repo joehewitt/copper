@@ -36,6 +36,14 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         return this._hotKeys;
     },
 
+    get isVertical() {
+        return this.cssClass('vertical');
+    },
+
+    get thumb() { 
+        return this.query('.thumb', true); 
+    },
+
     get value() {
         return this._value;
     },
@@ -97,13 +105,17 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     },
 
     layout: function() {
+        var isVertical = this.isVertical;
+        var size = isVertical ? this.height() : this.width();
+
         var buffer = $('.buffer', this);
-        buffer.css('width', this.buffer * this.width());
+        buffer.css('width', this.buffer * size);
         if (!this.dragging) {
-            var thumb = $('.thumb', this);
+            var thumb = this.thumb;
+            var thumbSize = isVertical ? thumb.height() : thumb.width();
             var range = this.max - this.min;
             var value = range > 0 ? this.value / range : 0;
-            thumb.css('left', value * (this.width() - thumb.width()));
+            thumb.css(isVertical ? 'top' : 'left', value * (size - thumbSize));
         }
     },
 
@@ -112,19 +124,22 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     _layoutTicks: function(cb) {
         this.query('.tickmark').remove();
 
-        var thumb = this.query('.thumb');
+        var thumb = this.thumb;
 
-        var padding = thumb.width()/2;
+        var isVertical = this.isVertical;
+        var maxSize = isVertical ? this.contentHeight() : this.contentWidth();
+        var padding = (isVertical ? thumb.height() : thumb.width()) / 2;
+
         var tickmarkCount = ((this.max+this.increment) - this.min) / this.increment;
         if (this.max - this.min > 0) {
-            var availableWidth = this.contentWidth()-padding*2;
-            var spacing = availableWidth / (tickmarkCount-1);
+            var availableSize = maxSize-padding*2;
+            var spacing = availableSize / (tickmarkCount-1);
 
-            var left = padding;
+            var pos = padding;
             for (var i = 0; i < tickmarkCount; ++i) {
                 var tickmark = $(document.createElement('div'));
                 tickmark.addClass('tickmark');
-                tickmark.css('left', left);
+                tickmark.css(isVertical ? 'top' : 'left', pos);
                 this.append(tickmark);
                 if (cb) {
                     var color = cb(i);
@@ -133,7 +148,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
                     }
                 }
 
-                left += spacing;
+                pos += spacing;
             }
         }
     },
@@ -146,9 +161,13 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         this.focus();
         event.preventDefault();
 
-        var offsetX = event.clientX - this.offset().left;
-        var maxLeft = this.width();
-        var ratio = offsetX / this.contentWidth();
+        var isVertical = this.isVertical;
+        var offset = isVertical
+            ? event.clientY - this.offset().top
+            : event.clientX - this.offset().left;
+        var maxSize = isVertical ? this.contentHeight() : this.contentWidth();
+
+        var ratio = offset / maxSize;
         var range = this.max - this.min;
         var value = this.min + (range * ratio);
 
@@ -169,31 +188,37 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         event.preventDefault();
         this.focus();
 
-        var thumb = $('.thumb', this);
+        var thumb = this.thumb;
 
         this.dragging = true;
         this.begandragging({target: this, value: this.value});
 
+        var isVertical = this.isVertical;
+
         var touch = event;//.touches[0];
-        var startLeft = thumb.position().left;
-        var startX = touch.clientX;
-        var maxLeft = this.width();
-        if (maxLeft >= thumb.width()) {
-            maxLeft -= thumb.width();
+        var startPosThumb = isVertical ? thumb.position().top : thumb.position().left;
+        var startPosMouse = isVertical ? touch.clientY : touch.clientX;
+        var maxPos = isVertical ? this.height() : this.width();
+
+        var size = isVertical ? this.height() : this.width();
+        var thumbSize = isVertical ? thumb.height() : thumb.width();
+        if (maxPos >= thumbSize) {
+            maxPos -= thumbSize;
         }
 
         var onMouseMove = _.bind(function(event) {
             var touch = event;//.touches[0];
-            var left = startLeft + (touch.clientX - startX);
-            if (left < 0) {
-                left = 0;
-            } else if (left > maxLeft) {
-                left = maxLeft;
+            var mousePos = isVertical ? touch.clientY : touch.clientX;
+            var pos = startPosThumb + (mousePos - startPosMouse);
+            if (pos < 0) {
+                pos = 0;
+            } else if (pos > maxPos) {
+                pos = maxPos;
             }
 
             // thumb.css('left', left);
             var range = this.max - this.min;
-            var value = this.min + ((left/maxLeft) * range);
+            var value = this.min + ((pos/maxPos) * range);
 
             if (this.increment) {
                 var remainder = value % this.increment;
@@ -205,7 +230,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
             }
 
             var pos = range > 0 ? value / range : 0;
-            thumb.css('left', pos * (this.width() - thumb.width()));
+            thumb.css(isVertical ? 'top': 'left', pos * (size - thumbSize));
 
             this._value = value;
             this.updated(this);
