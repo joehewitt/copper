@@ -24,6 +24,13 @@ exports.CommandManager.prototype = {
         return commandMap;
     },
 
+    linkMaps: function() {
+        for (var name in this.maps) {
+            var map = this.maps[name];
+            map.link();
+        }
+    },
+
     findMap: function(name) {
         return this.maps[name];
     },
@@ -72,6 +79,13 @@ exports.CommandManager.prototype = {
         var map = this.maps[mapName];
         if (map) {
             return map.findCondition(mapName, conditionName);
+        }
+    },
+
+    linkCondition: function(conditionId, command) {
+        var condition = this.findCondition(conditionId);
+        if (condition) {
+            condition.commands.push(command);
         }
     },
 

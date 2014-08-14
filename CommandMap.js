@@ -6,34 +6,37 @@ var _ = require('underscore');
 exports.CommandMap = function(name, defs, conditions, manager) {
     this.name = name;
     this.defs = defs;
+    this.conditions = conditions;
     this.manager = manager;
-    
-    var container = manager.container;
+
     var conditionMap = this.conditionMap = {};
 
-    for (var conditionName in conditions) {
-        var fn = conditions[conditionName];
+    for (var conditionName in this.conditions) {
+        var fn = this.conditions[conditionName];
         this.conditionMap[conditionName] = {validate: fn, commands: []};
     }
-
-    for (var commandName in defs) {
-        var command = defs[commandName];
-        command.id = name + '.' + commandName;
-        command.map = this;
-        command.manager = manager;
-
-        container[commandName] = _.bind(command.doIt, command);
-
-        var conditionName = command.condition;
-        if (conditionName) {
-            if (conditionName in conditionMap) {
-                conditionMap[conditionName].commands.push(command);
-            }
-        }
-    }
-};
+}    
 
 exports.CommandMap.prototype = {
+    link: function() {
+        var container = this.manager.container;
+        for (var commandName in this.defs) {
+            var command = this.defs[commandName];
+            command.id = this.name + '.' + commandName;
+            command.map = this;
+            command.manager = this.manager;
+            
+            if (!command.canEvaluate) {
+                container[commandName] = _.bind(command.doIt, command);            
+            }        
+
+            var conditionName = command.condition;
+            if (conditionName) {
+                this.manager.linkCondition(conditionName, command);
+            }
+        }
+    },
+
     find: function(mapName, commandName) {
         if (mapName == this.name) {
             return this.defs[commandName];
