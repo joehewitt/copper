@@ -193,7 +193,7 @@ exports.KeyManager.prototype = {
         }
         
         keyMaps = this.focusedKeyMaps;
-        for (var i = 0, l =keyMaps ? keyMaps.length : 0; i < l; ++i) {
+        for (var i = 0, l = keyMaps ? keyMaps.length : 0; i < l; ++i) {
             var keyMap = keyMaps[i];
             for (var map = keyMap.lastSibling; map; map = map.previousSibling) {
                 activeKeyMaps.push(map);
@@ -321,7 +321,7 @@ exports.KeyMap.prototype = {
         this.lastSibling = keyMap;
     },
 
-    remove: function(keyMap) {
+    remove: function(keyMap, shouldNotDeactivate) {
         var before;
         for (var map = this.lastSibling; map; map = map.previousSibling) {
             if (map == keyMap) {
@@ -334,7 +334,9 @@ exports.KeyMap.prototype = {
             }
             before = map;
         }
-        keyMap.processSequenceKey(null, [], true);
+        if (!shouldNotDeactivate) {
+            keyMap.processSequenceKey(null, [], true);            
+        }
     },
 
     processSequenceKey: function(event, keyCodes, forceDefault) {

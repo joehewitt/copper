@@ -161,12 +161,16 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
         }
     },
 
-    populate: function(commands, selectedCommand, hideInvalidItems, itemType, separatorType) {
+    populate: function(commands, selectedCommand, hideInvalidItems, itemType, separatorType,
+                       labelType) {
         if (!itemType) {
             itemType = ListItem;
         }
         if (!separatorType) {
             separatorType = ListSeparator;
+        }
+        if (!labelType) {
+            labelType = ListLabel;
         }
 
         for (var i = 0, l = commands.length; i < l; ++i) {
@@ -174,6 +178,9 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
             if (command == '-') {
                 var separator = new separatorType();
                 this.append(separator);
+            } else if (typeof(command) == 'string') {
+                var label = new labelType({label: command});
+                this.append(label);
             } else if (command) {
                 if (typeof(command) == 'string') {
                     var c = command;
@@ -270,3 +277,8 @@ exports.ListItem = html.div('.list-item', {}, [
 
 var ListSeparator =
 exports.ListSeparator = html.div('.list-separator', {}, [], {});
+
+// *************************************************************************************************
+
+var ListLabel =
+exports.ListLabel = html.div('.list-label', {}, ['$label'], {});

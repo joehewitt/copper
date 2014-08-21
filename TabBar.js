@@ -28,10 +28,11 @@ exports.TabBar = html.div('.tab-bar', {onclick: '$onClick'}, [],
             selectedTab.addClass('selected');
 
             this.parent().query('.tab-page.selected').removeClass('selected');
-            this.parent().query('.tab-page[value="' + value + '"]').addClass('selected');
+            var newPage = this.parent().query('.tab-page[value="' + value + '"]');
+            newPage.addClass('selected');
+
+            this.tabselected({tab: selectedTab, page: newPage});
         }
-        
-        this.tabselected(selectedTab);
     },
 
     // ---------------------------------------------------------------------------------------------

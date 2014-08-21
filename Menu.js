@@ -194,7 +194,8 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
     },
 
     populate: function(commands, selectedCommand, hideInvalidItems) {
-        this.list.populate(commands, selectedCommand, hideInvalidItems, MenuItem, MenuSeparator);
+        this.list.populate(commands, selectedCommand, hideInvalidItems, MenuItem, MenuSeparator,
+                           MenuLabel);
     },
 
     select: function(item) {
@@ -255,6 +256,11 @@ exports.MenuItem = ListItem('.menu-item', {draggable: 'true'}, [
 
 var MenuSeparator =
 exports.MenuSeparator = ListSeparator('.menu-separator', {}, [], {});
+
+// *************************************************************************************************
+
+var MenuLabel =
+exports.MenuLabel = html.div('.menu-label', {}, ['$label'], {});
 
 // *************************************************************************************************
 

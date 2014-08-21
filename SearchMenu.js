@@ -8,7 +8,8 @@ var KeyMap = require('./KeyManager').KeyMap,
     List = require('./List').List,
     Menu = require('./Menu').Menu,
     MenuItem = require('./Menu').MenuItem,
-    MenuSeparator = require('./Menu').MenuSeparator;
+    MenuSeparator = require('./Menu').MenuSeparator,
+    MenuLabel = require('./Menu').MenuLabel;
 
 // *************************************************************************************************
 
@@ -109,7 +110,7 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
             var page = new List();
             page.attr('tabindex', -1);
             var newCommands = command.children;
-            page.populate(newCommands, newCommands[0], false, MenuItem, MenuSeparator);
+            page.populate(newCommands, newCommands[0], false, MenuItem, MenuSeparator, MenuLabel);
 
             this.pushPage(page, command.title);
         }
