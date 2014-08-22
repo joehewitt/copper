@@ -25,7 +25,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
     hidden: $.event.dom('hidden', true),
 
     // ---------------------------------------------------------------------------------------------
-    
+
     get hotKeys() {
         if (!this._hotKeys) {
             this._hotKeys = new KeyMap([
@@ -54,7 +54,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
     copy: function(doubleTap) {
         return this.list.copy(doubleTap);
     },
-    
+
     // ---------------------------------------------------------------------------------------------
 
     show: function(anchorBox) {
@@ -65,7 +65,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
         this.updateCommands(this.list);
 
         var offset = anchorBox.offset();
-        
+
         var anchorX = offset.left;
         var width = this.width();
         var right = (offset.left + width) - window.scrollX;
@@ -142,8 +142,8 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
             return true;
         }
     },
-    
-    hide: function() {        
+
+    hide: function() {
         $(window).unlisten('mousedown', this.onMouseDown, true)
                  .unlisten('mousemove', this.onMouseMove, true)
                  .unlisten('blur', this.onWindowBlur, true);
@@ -181,6 +181,10 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
                     if (command) {
                         item.html(command.title);
 
+                        if (item.cssClass('checkbox')) {
+                            item.cssClass('checked', command.value);
+                        }
+
                         var hotKey = keyManager.findHotKey(command.id);
                         if (hotKey) {
                             item.hotKey = hotKey;
@@ -188,9 +192,9 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
                     }
 
                 }, this));
-                break;                
+                break;
             }
-        }        
+        }
     },
 
     populate: function(commands, selectedCommand, hideInvalidItems) {
@@ -243,14 +247,14 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
             this.hide();
         }
     },
-});    
+});
 
 // *************************************************************************************************
 
 var MenuItem =
 exports.MenuItem = ListItem('.menu-item', {draggable: 'true'}, [
     html.HERE,
-]);    
+]);
 
 // *************************************************************************************************
 
@@ -273,7 +277,7 @@ exports.MenuSliderItem = html.div('.menu-slider-item', {}, [
     updated: $.event,
 
     // ---------------------------------------------------------------------------------------------
-    
+
     get value() {
         return this._value;
     },
@@ -318,4 +322,4 @@ exports.MenuSliderItem = html.div('.menu-slider-item', {}, [
         this.query('.menu-item-slider').value = input.value;
         this.updated(input.value);
     }
-});    
+});
