@@ -10,6 +10,7 @@ Command.prototype = {
     className: null,
     actions: null,
     children: null,
+    isSearchable: true,
 
     get hasChildren() {
         return this.__lookupGetter__('children') || this.children;

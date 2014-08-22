@@ -26,9 +26,10 @@ exports.CommandMap.prototype = {
             command.map = this;
             command.manager = this.manager;
             
-            if (!command.canEvaluate) {
-                container[commandName] = _.bind(command.doIt, command);            
-            }        
+            var binding = _.bind(command.canEvaluate ? command.instantiate : command.doIt, command);
+            binding.create = _.bind(command.create, command);
+            binding.extend = _.bind(command.extend, command);
+            container[commandName] = binding;
 
             var conditionName = command.condition;
             if (conditionName) {
@@ -53,32 +54,6 @@ exports.CommandMap.prototype = {
 
         }
         return this.nextMap ? this.nextMap.findCondition(mapName, conditionName) : null;
-    },
-
-    match: function(pattern) {
-        var matches = [];
-        matchMap(this);
-        matches.sort(function(a,b) { return a.index > b.index ? 1 : -1; });
-        return _.map(matches, function(m) { return m.command; });
-
-        function matchMap(map) {
-            if (map.nextMap) {
-                matchMap(map.nextMap);
-            }
-    
-            for (var name in map.defs) {
-                var command = map.defs[name];
-                if (command.isSearchable) {
-                    var title = command.title;
-                    if (title) {
-                        var m = pattern.exec(title);
-                        if (m) {
-                            matches.push({index: m.index, command: command});
-                        }
-                    }
-                }
-            }
-        }
     },
 
     add: function(map) {

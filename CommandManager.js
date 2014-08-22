@@ -72,6 +72,41 @@ exports.CommandManager.prototype = {
         }
     },
 
+    match: function(pattern, commandTree) {
+        function searchObject(command) {
+            if (typeof(command) == 'object') {
+                if (command.id && command.id in cache) return;
+                cache[command.id] = 1;
+
+                var title = null;
+                try {
+                    title = command.title;
+                } catch (exc) {}
+                if (title) {
+                    var m = pattern.exec(title);
+                    if (m) {
+                        matches.push({index: m.index, command: command});
+                    }
+                }
+
+                if (command.isSearchable) {
+                    var children = command.children;
+                    if (children) {
+                        for (var i = 0, l = children.length; i < l; ++i) {
+                            searchObject(children[i]);
+                        }
+                    }                    
+                }
+            }
+        }
+
+        var cache = {};
+        var matches = [];
+        searchObject(commandTree);
+        matches.sort(function(a,b) { return a.index > b.index ? 1 : -1; });
+        return _.map(matches, function(m) { return m.command; });
+    },
+
     findCondition: function(conditionId) {
         var parts = conditionId.split('.');
         var mapName = parts[0];
