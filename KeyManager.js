@@ -15,7 +15,7 @@ exports.KeyManager = function(rootElement) {
     this._onFocusIn = _.bind(this._onFocusIn, this);
     this._onFocusOut = _.bind(this._onFocusOut, this);
     this._onWindowBlur = _.bind(this._onWindowBlur, this);
-    
+
     this.activate();
 }
 
@@ -53,6 +53,7 @@ exports.KeyManager.namedKeys = {
     QUOTE: 222,
     PLUS: 187,
     MINUS: 189,
+    PERIOD: 190,
 };
 
 var modifierKeys =
@@ -91,7 +92,7 @@ exports.KeyManager.prototype = {
             $(window).listen("blur", this._onWindowBlur, true);
         }
     },
-    
+
     deactivate: function() {
         if (1 || jQuery.browser.safari) {
             this.rootElement.unlisten("keydown", this._onKeyDown)
@@ -106,7 +107,7 @@ exports.KeyManager.prototype = {
                         .unlisten("focusout", this._onFocusOut);
         $(window).unlisten("blur", this._onWindowBlur, true);
     },
-    
+
     findHotKey: function(commandId) {
         var keyMaps = this._activeKeyMaps;
         for (var i = 0, l = keyMaps.length; i < l; ++i) {
@@ -153,7 +154,7 @@ exports.KeyManager.prototype = {
 
         return caught;
     },
-    
+
     redispatchSequence: function() {
         var keyMaps = this._activeKeyMaps;
         for (var i = 0, l = keyMaps.length; i < l; ++i) {
@@ -168,7 +169,7 @@ exports.KeyManager.prototype = {
         keyMap.manager = this;
         this.keyMaps.push(keyMap);
     },
-    
+
     remove: function(keyMap) {
         var keyMaps = this.keyMaps;
         var index = keyMaps.indexOf(keyMap);
@@ -191,7 +192,7 @@ exports.KeyManager.prototype = {
             }
             activeKeyMaps.push(keyMap);
         }
-        
+
         keyMaps = this.focusedKeyMaps;
         for (var i = 0, l = keyMaps ? keyMaps.length : 0; i < l; ++i) {
             var keyMap = keyMaps[i];
@@ -229,7 +230,7 @@ exports.KeyManager.prototype = {
         }
         return keyMaps;
     },
-    
+
     _processKeyMap: function(keyMap, event, keyCode, shift, meta, alt, ctrl, up, forceDefault) {
         if (keyMap.processSequenceKey(event, this.keysDown, forceDefault)) {
             return true;
@@ -244,11 +245,11 @@ exports.KeyManager.prototype = {
     _releaseAllKeys: function() {
         for (var i = this.keysDown.length-1; i >= 0; --i) {
             this.processKey(null, this.keysDown[i], false, false, false, false, true, true);
-        }        
+        }
     },
 
     // ---------------------------------------------------------------------------------------------
-    
+
     _onKeyDown: function(event) {
         var keyCode = translateKey(event.keyCode);
         // D&&D("DOWN", keyCode, event.metaKey);
@@ -273,7 +274,7 @@ exports.KeyManager.prototype = {
                 event.preventDefault();
             }
         }
-    },    
+    },
 
     _onKeyUp: function(event) {
         var keyCode = translateKey(event.keyCode);
@@ -335,7 +336,7 @@ exports.KeyMap.prototype = {
             before = map;
         }
         if (!shouldNotDeactivate) {
-            keyMap.processSequenceKey(null, [], true);            
+            keyMap.processSequenceKey(null, [], true);
         }
     },
 
@@ -347,7 +348,7 @@ exports.KeyMap.prototype = {
             if (!map) {
                 break;
             }
-        }   
+        }
 
         if (!map && forceDefault) {
             map = this.sequenceMap;
@@ -365,7 +366,7 @@ exports.KeyMap.prototype = {
             if (map && map.bindings) {
                 if (event) {
                     event.preventDefault();
-                    event.stopPropagation();            
+                    event.stopPropagation();
                 }
 
                 this.modeKeysDown = !matchedDefault;
@@ -407,7 +408,7 @@ exports.KeyMap.prototype = {
                 if (this.mode) {
                     if (keyCode == this.mode.keyCode) {
                         if (this.mode.down == !up) {
-                            // Ignore repeated keyDowns 
+                            // Ignore repeated keyDowns
                             continue;
                         } else {
                             this.mode.down = !up;
@@ -415,7 +416,7 @@ exports.KeyMap.prototype = {
                     } else if (this.mode.modifiers && keyCode in this.mode.modifiers) {
                         var modifier = this.mode.modifiers;
                         if (modifier.down == !up) {
-                            // Ignore repeated keyDowns 
+                            // Ignore repeated keyDowns
                             continue;
                         } else {
                             modifier.down = !up;
@@ -447,7 +448,7 @@ exports.KeyMap.prototype = {
                 }
             }
         }
-            
+
         if (!caught && modifierKeys[keyCode] && this.onModifier) {
             this.onModifier(event);
         } else if (!up && !caught && this.catchAll) {
@@ -457,22 +458,22 @@ exports.KeyMap.prototype = {
         }
         return {caught: caught, handled: handled};
     },
-    
+
     processChar: function(event, charCode) {
         if (this.typed) {
             return !this.typed(event);
         }
     },
-    
-    findHotKey: function(commandId) {        
+
+    findHotKey: function(commandId) {
         var combo = this.commandMap[commandId];
         if (combo) {
             return formatCombo(combo);
         }
     },
-    
+
     // ---------------------------------------------------------------------------------------------
-        
+
     _parseMap: function(source) {
         for (var i = 0; i < source.length; i += 2) {
             var keys = source[i];
@@ -528,12 +529,12 @@ exports.KeyMap.prototype = {
             up = true;
             keys = keys.substr(1);
         }
-        
+
         var parts = keys.toUpperCase().split("+");
         if (parts.length > 1) {
             for (var i = 0; i < parts.length-1; ++i) {
                 var part = parts[i];
-                
+
                 var state;
                 if (part == "?") {
                     shift = exports.KeyManager.MODIFIER_EITHER;
@@ -560,7 +561,7 @@ exports.KeyMap.prototype = {
                 }
             }
         }
-        
+
         var part = parts[parts.length-1];
         var key = identifyKey(part);
 

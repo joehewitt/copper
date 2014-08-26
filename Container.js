@@ -42,12 +42,12 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
                     var value = button.value;
                     group.value = value;
                     group.updated({target: group, value: value});
-                } else {             
-                    var command = button.cmd();
-                    if (command) {
-                        command.doIt();
-                    }
                 }
+            }
+
+            var command = button.cmd();
+            if (command) {
+                command.doIt();
             }
         }
     },

@@ -45,17 +45,37 @@ exports.CommandManager.prototype = {
         }
     },
 
-    validateConditions: function(subtree) {
-        var commands = this.container.commands;
-        if (commands) {
-            if (!subtree) {
-                subtree = this.container;
-            }
-            for (var name in commands.conditionMap) {
-                var condition = commands.conditionMap[name];
-                this._validateCondition(condition, subtree);
-            }
+    validateCommand: function(commandId, subtree) {
+        if (!subtree) {
+            subtree = this.container;
         }
+        var command = this.find(commandId);
+        var valid = command.validate();
+        var value = command.value;
+        subtree.query('*[command="' + commandId + '"]').each(function(item) {
+            item.cssClass('disabled', !valid);
+            if (item.cssClass('checkbox')) {
+                item.cssClass('selected', value);
+            }
+        })
+    },
+
+    validateConditions: function(subtree) {
+        if (!subtree) {
+            subtree = this.container;
+        }
+
+        subtree.query('*[command]').each(function(item) {
+            var command = item.cmd();
+            if (command) {
+                var valid = command.validate();
+                item.cssClass('disabled', !valid);
+
+                if (item.cssClass('checkbox')) {
+                    item.cssClass('selected', command.value);
+                }
+            }
+        });
     },
 
     get: function(name) {
@@ -95,7 +115,7 @@ exports.CommandManager.prototype = {
                         for (var i = 0, l = children.length; i < l; ++i) {
                             searchObject(children[i]);
                         }
-                    }                    
+                    }
                 }
             }
         }
