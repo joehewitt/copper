@@ -55,7 +55,7 @@ exports.CommandManager.prototype = {
         subtree.query('*[command="' + commandId + '"]').each(function(item) {
             item.cssClass('disabled', !valid);
             if (item.cssClass('checkbox')) {
-                item.cssClass('selected', value);
+                item.cssClass('checked', value);
             }
         })
     },
@@ -72,7 +72,7 @@ exports.CommandManager.prototype = {
                 item.cssClass('disabled', !valid);
 
                 if (item.cssClass('checkbox')) {
-                    item.cssClass('selected', command.value);
+                    item.cssClass('checked', command.value);
                 }
             }
         });

@@ -16,12 +16,15 @@ exports.Button = html.div('.button', {}, [
     },
 
     set selected(selected) {
-        if (selected) {
-            this.addClass('selected');
-        } else {
-            this.removeClass('selected');
-        }
-        return selected;
+        this.cssClass('selected', selected);
+    },
+
+    get checked() {
+        return this.cssClass('checked');
+    },
+
+    set checked(checked) {
+        this.cssClass('checked', checked);
     },
 
     get menu() {
@@ -52,7 +55,7 @@ exports.Button = html.div('.button', {}, [
     // ---------------------------------------------------------------------------------------------
 
     toggle: function() {
-        this.selected = !this.selected;
+        this.checked = !this.checked;
     },
 
     showMenu: function(menu) {
@@ -71,7 +74,7 @@ exports.Button = html.div('.button', {}, [
             return menu.show(this) ? menu : null;
         }
     }
-});    
+});
 
 // *************************************************************************************************
 
@@ -86,17 +89,12 @@ exports.Checkbox = html.input('.checkbox', {type: 'checkbox'}, [
     },
 
     set checked(checked) {
-        if (checked) {
-            this.prop('checked', true);
-        } else {
-            this.prop('checked', false);
-        }
-        return checked;
+        this.prop('checked', !!checked);
     },
 
     // ---------------------------------------------------------------------------------------------
-    
+
     toggle: function() {
         this.checked = !this.checked;
     }
-});    
+});

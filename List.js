@@ -16,7 +16,7 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
     popped: $.event.dom('popped', true),
 
     // ---------------------------------------------------------------------------------------------
-    
+
     get hotKeys() {
         if (!this._hotKeys) {
             this._hotKeys = new KeyMap([
@@ -58,7 +58,7 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
             });
             this.selected({target: item});
         } else if (hadSelection) {
-            this.selected({target: null});            
+            this.selected({target: null});
         }
     },
 
@@ -211,9 +211,9 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
                     }
                 }
             }
-        }            
+        }
     },
-    
+
     // ---------------------------------------------------------------------------------------------
 
     onClick: function(event) {
@@ -242,8 +242,8 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
             this.selectByText(String.fromCharCode(c));
             return true;
         }
-    },    
-});    
+    },
+});
 
 // *************************************************************************************************
 
@@ -271,7 +271,7 @@ exports.ListItem = html.div('.list-item', {}, [
         this.query('.list-item-title').html(value);
         return value;
     },
-});    
+});
 
 // *************************************************************************************************
 
