@@ -478,18 +478,17 @@ exports.KeyMap.prototype = {
         for (var i = 0; i < source.length; i += 2) {
             var keys = source[i];
             var handler = source[i+1];
-            var commandId = typeof(handler) == 'function' ? null : handler.id;
-
+            var commandId = handler.id;
             if (keys == "+") {
-                this.override = wrapHandler(handler);
+                this.override = wrapKeyHandler(handler);
             } else if (keys == "*") {
-                this.catchAll = wrapHandler(handler);
+                this.catchAll = wrapKeyHandler(handler);
             } else if (keys == "&") {
-                this.onModifier = wrapHandler(handler);
+                this.onModifier = wrapKeyHandler(handler);
             } else if (keys == "") {
-                this.typed = wrapHandler(handler);
+                this.typed = wrapKeyHandler(handler);
             } else if (keys[0] == '>') {
-                this._parseSequence(keys.substr(1), wrapHandler(handler), commandId);
+                this._parseSequence(keys.substr(1), wrapKeyHandler(handler), commandId);
             } else {
                 this._parseCombo(keys, wrapHandler(handler), commandId);
             }
@@ -607,17 +606,15 @@ function identifyKey(name) {
     }
 }
 
+function wrapKeyHandler(handler) {
+    return function(event) {
+        return handler.apply(self, arguments);
+    }
+}
+
 function wrapHandler(handler) {
-    if (typeof(handler) == 'function') {
-        return function(event) {
-            return handler.apply(self, arguments);
-        }
-    } else {
-        return function(event) {
-            if (handler.validate()) {
-                return handler.doIt.apply(handler);
-            }
-        }
+    return function() {
+        return handler();
     }
 }
 

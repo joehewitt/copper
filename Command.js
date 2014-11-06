@@ -26,10 +26,7 @@ Command.prototype = {
 
     // ---------------------------------------------------------------------------------------------
 
-    validate: function() { 
-    },
-
-    doIt: function(args) {
+    validate: function() {
     },
 
     highlight: function(highlighted) {
@@ -39,7 +36,7 @@ Command.prototype = {
     },
 
     drag: function(dataTransfer) {
-    },    
+    },
 };
 
 exports.Command = Command;

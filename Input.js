@@ -19,7 +19,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
     updated: $.event,
 
     // ---------------------------------------------------------------------------------------------
-    
+
     get value() {
         var value = parseFloat(this.val().value);
         if (isNaN(value)) {
@@ -47,7 +47,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
     // ---------------------------------------------------------------------------------------------
 
     reformat: function(value) {
-        return Math.round(value*this.rounding)/this.rounding;        
+        return Math.round(value*this.rounding)/this.rounding;
     },
 
     formatValue: function(value) {
@@ -69,7 +69,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
                 return 0;
             }
         } else {
-            return value;            
+            return value;
         }
     },
 
@@ -94,7 +94,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
                 var dy = event.clientY - startY;
                 var diff = dy * increment;
                 diff -= diff % this.increment;
-                
+
                 var newValue = startValue + diff;
                 this.value = this.formatValue(newValue);
                 this.updated(this);
@@ -117,7 +117,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
             $(window).listen('mousemove', this.onMouseMove, true)
                      .listen('mouseup', this.onMouseUp, true);
         }
-    },    
+    },
 
     onFocus: function() {
         this.onMouseWheel = _.bind(function(event) {
@@ -130,7 +130,7 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
             }
         }, this);
 
-        $(window).listen('mousewheel', this.onMouseWheel, true);
+        // $(window).listen('mousewheel', this.onMouseWheel, true);
     },
 
     onBlur: function() {
@@ -142,4 +142,4 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
     onInput: function(event) {
         this.updated(this);
     },
-});    
+});

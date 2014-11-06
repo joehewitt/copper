@@ -140,7 +140,7 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
         } else {
             var evt = {target: item, command: command};
             if (command) {
-                command.doIt();
+                command();
             }
             if (!evt.prevent && typeof(item.commanded) == 'function') {
                 item.commanded(evt);

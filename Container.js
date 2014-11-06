@@ -47,7 +47,7 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
 
             var command = button.cmd();
             if (command) {
-                command.doIt();
+                command();
             }
         }
     },

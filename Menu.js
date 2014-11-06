@@ -131,9 +131,17 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
                     this.hide();
                 }
             }, this);
+            this.onMouseWheel = _.bind(function(event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }, this);
             $(window).listen('mousedown', this.onMouseDown, true)
                      .listen('mousemove', this.onMouseMove, true)
+                     .listen('mousewheel', this.onMouseWheel, true)
                      .listen('blur', this.onWindowBlur, true);
+
+            container.addClass('showing-menu');
+            this.showingAtContainer = container;
 
             this.addClass('visible');
             this.focus();
@@ -146,21 +154,26 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
     hide: function() {
         $(window).unlisten('mousedown', this.onMouseDown, true)
                  .unlisten('mousemove', this.onMouseMove, true)
+                 .unlisten('mousewheel', this.onMouseWheel, true)
                  .unlisten('blur', this.onWindowBlur, true);
         delete this.onMouseDown;
         delete this.onMouseMove;
+        delete this.onMouseWheel;
         delete this.onWindowBlur;
+
+        this.showingAtContainer.removeClass('showing-menu');
+        delete this.showingAtContainer;
 
         this.addClass('fade');
 
-        setTimeout(_.bind(function() {
-            var container = this.parent().closest('*[tabindex]');
-            if (container.length) {
-                container.focus();
-            } else {
-                this.val().blur();
-            }
+        var container = this.parent().closest('*[tabindex]');
+        if (container.length) {
+            container.focus();
+        } else {
+            this.val().blur();
+        }
 
+        setTimeout(_.bind(function() {
             this.removeClass('fade').removeClass('visible');
 
             this.select(null);
