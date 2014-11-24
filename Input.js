@@ -17,6 +17,8 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
     pixelsPerIncrement: 5,
 
     updated: $.event,
+    entered: $.event,
+    escaped: $.event,
 
     // ---------------------------------------------------------------------------------------------
 
@@ -38,6 +40,8 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
             this._hotKeys = new KeyMap([
                 'UP', _.bind(function() { this.incrementNumber(this.increment); }, this),
                 'DOWN', _.bind(function() { this.incrementNumber(-this.increment); }, this),
+                'ENTER', _.bind(function() { this.enter(); }, this),
+                'ESC', _.bind(function() { this.escape(); }, this),
             ]);
             this._hotKeys.exclusive = true;
         }
@@ -78,6 +82,14 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
             this.value += increment;
             this.updated(this);
         }
+    },
+
+    enter: function() {
+        this.entered(this);
+    },
+
+    escape: function() {
+        this.escaped(this);
     },
 
     // ---------------------------------------------------------------------------------------------

@@ -40,8 +40,8 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         return this.cssClass('vertical');
     },
 
-    get thumb() { 
-        return this.query('.thumb', true); 
+    get thumb() {
+        return this.query('.thumb', true);
     },
 
     get value() {
@@ -81,7 +81,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         this.min = min;
         this.max = max;
         this.increment = increment;
-        this._layoutTicks(cb);
+        // this._layoutTicks(cb);
     },
 
     slideHome: function() {
@@ -93,7 +93,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         this.value = this.max;
         this.updated(this);
     },
-    
+
     slideDown: function() {
         this.value -= this.increment;
         this.updated(this);
@@ -114,7 +114,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
             var thumb = this.thumb;
             var thumbSize = isVertical ? thumb.height() : thumb.width();
             var range = this.max - this.min;
-            var value = range > 0 ? this.value / range : 0;
+            var value = range > 0 ? (this.value-this.min) / range : 0;
             thumb.css(isVertical ? 'top' : 'left', value * (size - thumbSize));
         }
     },
@@ -160,6 +160,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
 
         this.focus();
         event.preventDefault();
+        event.stopPropagation();
 
         var isVertical = this.isVertical;
         var offset = isVertical
@@ -186,7 +187,8 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
 
     onMouseDownThumb: function(event) {
         event.preventDefault();
-        this.focus();
+        event.stopPropagation();
+        // this.focus();
 
         var thumb = this.thumb;
 
@@ -229,7 +231,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
                 }
             }
 
-            var pos = range > 0 ? value / range : 0;
+            var pos = range > 0 ? (value-this.min) / range : 0;
             thumb.css(isVertical ? 'top': 'left', pos * (size - thumbSize));
 
             this._value = value;
@@ -246,4 +248,4 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         document.addEventListener('mousemove', onMouseMove, false);
         document.addEventListener('mouseup', onMouseEnd, false);
     },
-});    
+});

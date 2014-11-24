@@ -9,16 +9,16 @@ var Button = require('./Button').Button,
 
 // *************************************************************************************************
 
-exports.Dropdown = Button('.dropdown', {menu: 'self'}, [
+exports.Dropdown = Button('.dropdown', {menu: 'self', onopeningmenu: '$onMenuOpening',
+                                        onclosingmenu: '$onMenuClosing'}, [
     html.div('.dropdown-title', [
         html.HERE,
     ]),
-    Menu('.dropdown-menu', {oncommanded: '$onMenuCommanded'}),
 ], {
     updated: $.event,
-    
+
     // ---------------------------------------------------------------------------------------------
-    
+
     get value() {
         return this._value;
     },
@@ -35,7 +35,7 @@ exports.Dropdown = Button('.dropdown', {menu: 'self'}, [
         if (item.length) {
             item.addClass('checked');
             this.updateTitle(item);
-        } 
+        }
 
         return value;
     },
@@ -43,9 +43,15 @@ exports.Dropdown = Button('.dropdown', {menu: 'self'}, [
     get selectedItem() {
         return this.menu.query('.menu-item.checked', true);
     },
-    
+
+    createMenu: function() {
+        var menu = new Menu();
+        menu.addClass('dropdown-menu');
+        return menu;
+    },
+
     // ---------------------------------------------------------------------------------------------
-    
+
     updateTitle: function(item) {
         var caption = item.attr('caption');
         this.query('.dropdown-title', true).html(caption);
@@ -53,13 +59,24 @@ exports.Dropdown = Button('.dropdown', {menu: 'self'}, [
 
     // ---------------------------------------------------------------------------------------------
 
+    onMenuOpening: function(event) {
+        this._commanded = _.bind(this.onMenuCommanded, this);
+        var menu = event.detail.menu;
+        menu.listen('commanded', this._commanded);
+    },
+
+    onMenuClosing: function(event) {
+        var menu = event.detail.menu;
+        menu.unlisten('commanded', this._commanded);
+        this._commanded = null;
+    },
+
     onMenuCommanded: function(event) {
         var value = event.detail.target.attr('value');
         this.value = value;
-
         this.updated({target: this, value: value});
-    }
-});    
+    },
+});
 
 // *************************************************************************************************
 

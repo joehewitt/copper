@@ -59,7 +59,7 @@ exports.Tree = html.div('.tree', {onmousedown: '$onMouseDown'}, [
                     return;
                 }
                 if (searchUp) {
-                    this.toggleItem(searchItem);                        
+                    this.toggleItem(searchItem);
                     if (searchItem.equals(item)) {
                         return true;
                     }
@@ -67,7 +67,7 @@ exports.Tree = html.div('.tree', {onmousedown: '$onMouseDown'}, [
                     if (searchItem.equals(endItem)) {
                         return true;
                     } else {
-                        this.toggleItem(searchItem);                        
+                        this.toggleItem(searchItem);
                     }
                 }
             }, this));

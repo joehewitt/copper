@@ -9,6 +9,9 @@ exports.Button = html.div('.button', {}, [
 ], {
     value: null,
 
+    openingmenu: $.event.dom('openingmenu', true),
+    closingmenu: $.event.dom('closingmenu', true),
+
     // ---------------------------------------------------------------------------------------------
 
     get selected() {
@@ -36,7 +39,15 @@ exports.Button = html.div('.button', {}, [
         if (menuSelector) {
             if (menuSelector == 'self') {
                 var menu = this.query('.menu', true);
-                return menu.length ? menu : null;
+                if (!menu.length) {
+                    menu = this.createMenu();
+                    if (menu) {
+                        this.append(menu, true);
+                        return menu;
+                    }
+                } else {
+                    return menu;
+                }
             } else {
                 var menu = this.query(menuSelector, true);
                 if (!menu.length) {
@@ -45,9 +56,8 @@ exports.Button = html.div('.button', {}, [
                         container = $(document);
                     }
                     menu = container.query(menuSelector, true);
+                    return menu.length ? menu : null;
                 }
-
-                return menu.length ? menu : null;
             }
         }
     },
@@ -58,15 +68,20 @@ exports.Button = html.div('.button', {}, [
         this.checked = !this.checked;
     },
 
+    createMenu: function() {
+    },
+
     showMenu: function(menu) {
         var menu = this.menu;
         if (menu) {
             this.openedMenu = menu;
+            this.openingmenu({target: this, menu: menu});
 
             var onHidden = _.bind(function () {
                 this.openedMenu = null;
                 this.removeClass('depressed');
                 menu.unlisten('hidden', onHidden);
+                this.closingmenu({target: this, menu: menu});
             }, this);
 
             this.addClass('depressed');
