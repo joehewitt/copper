@@ -17,6 +17,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     min: 0,
     max: 1,
     buffer: 0,
+    _disabled: false,
 
     updated: $.event,
     begandragging: $.event,
@@ -41,7 +42,20 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     },
 
     get thumb() {
-        return this.query('.thumb', true);
+        return this._thumb ? this._thumb : (this._thumb = this.query('.thumb', true));
+    },
+
+    get track() {
+        return this._track ? this._track : (this._track = this.query('.track', true));
+    },
+
+    get disabled() {
+        return this._disabled;
+    },
+
+    set disabled(disabled) {
+        this._disabled = disabled;
+        this.css('disabled', disabled);
     },
 
     get value() {
@@ -157,6 +171,7 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
 
     onMouseDownTrack: function(event) {
         if ($(event.target).cssClass('thumb')) return;
+        if (this._disabled) return;
 
         this.focus();
         event.preventDefault();
@@ -186,6 +201,8 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
     },
 
     onMouseDownThumb: function(event) {
+        if (this._disabled) return;
+
         event.preventDefault();
         event.stopPropagation();
         // this.focus();
@@ -239,13 +256,13 @@ exports.Slider = html.div('.slider', {onmousedown: '$onMouseDownTrack'}, [
         }, this);
 
         var onMouseEnd = _.bind(function(event) {
-            document.removeEventListener('mousemove', onMouseMove, false);
-            document.removeEventListener('mouseup', onMouseEnd, false);
+                $(document).unlisten('mousemove', onMouseMove, true)
+                           .unlisten('mouseup', onMouseEnd, true);
             this.dragging = false;
             this.endeddragging({target: this, value: this.value});
         }, this);
 
-        document.addEventListener('mousemove', onMouseMove, false);
-        document.addEventListener('mouseup', onMouseEnd, false);
+        $(document).listen('mousemove', onMouseMove, true)
+                   .listen('mouseup', onMouseEnd, true);
     },
 });

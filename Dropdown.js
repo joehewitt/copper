@@ -11,9 +11,7 @@ var Button = require('./Button').Button,
 
 exports.Dropdown = Button('.dropdown', {menu: 'self', onopeningmenu: '$onMenuOpening',
                                         onclosingmenu: '$onMenuClosing'}, [
-    html.div('.dropdown-title', [
-        html.HERE,
-    ]),
+    html.div('.dropdown-title', []),
 ], {
     updated: $.event,
 
@@ -35,6 +33,8 @@ exports.Dropdown = Button('.dropdown', {menu: 'self', onopeningmenu: '$onMenuOpe
         if (item.length) {
             item.addClass('checked');
             this.updateTitle(item);
+        } else {
+            this.updateCaption(value);
         }
 
         return value;
@@ -54,7 +54,14 @@ exports.Dropdown = Button('.dropdown', {menu: 'self', onopeningmenu: '$onMenuOpe
 
     updateTitle: function(item) {
         var caption = item.attr('caption');
-        this.query('.dropdown-title', true).html(caption);
+        if (!caption) {
+            caption = item.text();
+        }
+        this.query('.dropdown-title', true).text(caption);
+    },
+
+    updateCaption: function(caption) {
+        this.query('.dropdown-title', true).text(caption);
     },
 
     // ---------------------------------------------------------------------------------------------

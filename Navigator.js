@@ -24,7 +24,7 @@ exports.Navigator = html.div('.navigator', {}, [
     get currentPage() {
         return this.stack ? this.stack[this.stack.length-1].page : null;
     },
-    
+
     // ---------------------------------------------------------------------------------------------
     // ore.Tag
 
@@ -72,7 +72,7 @@ exports.Navigator = html.div('.navigator', {}, [
         if (!this.stack) {
             this.stack = [];
         }
-        
+
         var event = {target: this, page: page, header: header};
         this.navigating(event);
         if (event.prevent) {
@@ -89,6 +89,9 @@ exports.Navigator = html.div('.navigator', {}, [
 
         this.query('.navigator-header-box').append(header);
         this.query('.navigator-page-box').append(page);
+        if (page.layout) {
+            page.layout();
+        }
 
         if (oldItem) {
             // Affix the position of the page so it doesn't jump just before the animation
@@ -98,7 +101,7 @@ exports.Navigator = html.div('.navigator', {}, [
                         .css('top', pos.top - headerOffset);
 
             if (oldItem.header) {
-                oldItem.header.addClass('fading-out');                
+                oldItem.header.addClass('fading-out');
             }
             oldItem.page.addClass('sliding-out');
             header.addClass('fading-in');
@@ -176,7 +179,7 @@ exports.Navigator = html.div('.navigator', {}, [
             page.addClass('sliding-back-in');
         } else {
             deadItem.header.remove();
-            deadItem.page.remove();            
+            deadItem.page.remove();
         }
 
         if (notAnimated) {

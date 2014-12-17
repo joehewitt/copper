@@ -79,7 +79,7 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
         if (text.length) {
             this.searched({text: text, results: newCommands});
             this.showResults(newCommands);
-            this.updateCommands(this.list);                
+            this.updateCommands(this.list);
         } else if (this.defaultCommand) {
             this.empty();
             this.populate(this.defaultCommand.children);
@@ -99,7 +99,7 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
     },
 
     // ---------------------------------------------------------------------------------------------
-    
+
     onInput: function(event) {
         this.search(this.value);
     },
@@ -138,13 +138,13 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
         var command = item.cmd();
         if (command && command.hasDrag) {
             if (command.drag(event.dataTransfer)) {
-                event.dataTransfer.setDragImage(item.nodes[0], 0, 0);                
+                event.dataTransfer.setDragImage(item.nodes[0], 0, 0);
                 return;
             }
         }
         event.preventDefault();
     }
-});    
+});
 
 // *************************************************************************************************
 

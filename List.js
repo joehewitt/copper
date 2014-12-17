@@ -9,13 +9,15 @@ var KeyMap = require('./KeyManager').KeyMap,
 // *************************************************************************************************
 
 exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onMouseOut',
-                                  onclick: '$onClick'}, [], {
+                                  onmousedown: '$onMouseDown', onclick: '$onClick'}, [], {
     selected: $.event.dom('selected', true),
     commanded: $.event.dom('commanded', true),
     pushed: $.event.dom('pushed', true),
     popped: $.event.dom('popped', true),
 
     // ---------------------------------------------------------------------------------------------
+
+    selectMode: 'hover',
 
     get hotKeys() {
         if (!this._hotKeys) {
@@ -219,19 +221,36 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
     onClick: function(event) {
         var item = $(event.target).closest('.list-item');
         if (item.length) {
-            this.enterItem(item);
+            if (this.selectMode == 'click') {
+                if (event.detail == 2) {
+                    this.enterItem(item);
+                }
+            } else {
+                this.enterItem(item);
+            }
             event.preventDefault();
         }
     },
 
+    onMouseDown: function(event) {
+        if (this.selectMode == 'click') {
+            var item = $(event.target).closest('.list-item');
+            this.select(item.length ? item : null);
+        }
+    },
+
     onMouseOver: function(event) {
-        var item = $(event.target).closest('.list-item');
-        this.select(item.length ? item : null);
+        if (this.selectMode == 'hover') {
+            var item = $(event.target).closest('.list-item');
+            this.select(item.length ? item : null);
+        }
     },
 
     onMouseOut: function(event) {
         if (!$(event.toElement).closest('.list').equals(this)) {
-            this.select(null);
+            if (this.selectMode == 'hover') {
+                this.select(null);
+            }
         }
     },
 

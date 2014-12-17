@@ -132,11 +132,11 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
                 }
             }, this);
             this.onMouseWheel = _.bind(function(event) {
-                event.stopPropagation();
-                event.preventDefault();
+                // event.stopPropagation();
+                // event.preventDefault();
             }, this);
             $(window).listen('mousedown', this.onMouseDown, true)
-                     .listen('mousemove', this.onMouseMove, true)
+                     .listen('mousemove', this.onMouseMove, false)
                      .listen('mousewheel', this.onMouseWheel, true)
                      .listen('blur', this.onWindowBlur, true);
 
@@ -153,7 +153,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
 
     hide: function() {
         $(window).unlisten('mousedown', this.onMouseDown, true)
-                 .unlisten('mousemove', this.onMouseMove, true)
+                 .unlisten('mousemove', this.onMouseMove, false)
                  .unlisten('mousewheel', this.onMouseWheel, true)
                  .unlisten('blur', this.onWindowBlur, true);
         delete this.onMouseDown;

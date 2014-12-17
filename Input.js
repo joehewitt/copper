@@ -7,18 +7,68 @@ var KeyMap = require('./KeyManager').KeyMap;
 
 // *************************************************************************************************
 
-exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown',
-                                                     onfocus: '$onFocus',
-                                                     onblur: '$onBlur',
-                                                     oninput: '$onInput',}, [
+exports.Input = html.input('.input', {oninput: '$onInput',}, [
+], {
+    updated: $.event,
+    entered: $.event,
+    escaped: $.event,
+
+    // ---------------------------------------------------------------------------------------------
+
+    get value() {
+        return this.val().value;
+    },
+
+    set value(value) {
+        this.val().value = value;
+    },
+
+    get hotKeys() {
+        if (!this._hotKeys) {
+            this._hotKeys = new KeyMap([
+                'ENTER', _.bind(function() { this.enter(); }, this),
+                'ESC', _.bind(function() { this.escape(); }, this),
+            ]);
+            this._hotKeys.exclusive = true;
+        }
+        return this._hotKeys;
+    },
+
+    get disabled() {
+        return this._disabled;
+    },
+
+    set disabled(disabled) {
+        this._disabled = disabled;
+        this.attr('disabled', disabled ? 'true' : null);
+    },
+
+    // ---------------------------------------------------------------------------------------------
+
+    enter: function() {
+        this.entered(this);
+    },
+
+    escape: function() {
+        this.escaped(this);
+    },
+
+    // ---------------------------------------------------------------------------------------------
+
+    onInput: function(event) {
+        this.updated(this);
+    },
+});
+
+// *************************************************************************************************
+
+exports.NumericInput = exports.Input('.numeric-input', {onmousedown: '$onMouseDown',
+                                                        onfocus: '$onFocus',
+                                                        onblur: '$onBlur'}, [
 ], {
     shouldSnap: false,
     rounding: 100,
     pixelsPerIncrement: 5,
-
-    updated: $.event,
-    entered: $.event,
-    escaped: $.event,
 
     // ---------------------------------------------------------------------------------------------
 
@@ -79,17 +129,16 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
 
     incrementNumber: function(increment) {
         if (this.increment !== undefined) {
-            this.value += increment;
+            var value = this.value + increment;
+            if (this.min !== undefined) {
+                value = Math.max(value, this.min);
+            }
+            if (this.max !== undefined) {
+                value = Math.min(value, this.max);
+            }
+            this.value = value;
             this.updated(this);
         }
-    },
-
-    enter: function() {
-        this.entered(this);
-    },
-
-    escape: function() {
-        this.escaped(this);
     },
 
     // ---------------------------------------------------------------------------------------------
@@ -149,9 +198,5 @@ exports.NumericInput = html.input('.numeric-input', {onmousedown: '$onMouseDown'
         this.value = this.formatValue(this.val().value);
         $(window).unlisten('mousewheel', this.onMouseWheel, true);
         delete this.onMouseWheel;
-    },
-
-    onInput: function(event) {
-        this.updated(this);
     },
 });
