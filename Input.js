@@ -29,7 +29,6 @@ exports.Input = html.input('.input', {oninput: '$onInput',}, [
                 'ENTER', _.bind(function() { this.enter(); }, this),
                 'ESC', _.bind(function() { this.escape(); }, this),
             ]);
-            this._hotKeys.exclusive = true;
         }
         return this._hotKeys;
     },
