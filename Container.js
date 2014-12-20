@@ -35,7 +35,7 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
         var button = $(event.target).closest('.button');
         if (button.length && !button.cssClass('disabled')) {
             if (button.cssClass('checkbox')) {
-                button.toggle();
+                button.selected = !button.selected;
             } else {
                 var group = button.closest('.button-group');
                 if (group.length) {

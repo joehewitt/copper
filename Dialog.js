@@ -11,7 +11,7 @@ var Button = require('./Button').Button,
 
 exports.Dialog = html.div('.dialog', {}, [
     html.div('.dialog-cover'),
-    html.div('.dialog-window', {}, [
+    html.div('.dialog-window', {tabindex: '-1'}, [
         html.HERE,
 
         html.div('.dialog-buttons', [
@@ -24,6 +24,7 @@ exports.Dialog = html.div('.dialog', {}, [
     get hotKeys() {
         if (!this._hotKeys) {
             this._hotKeys = new KeyMap([
+                'ENTER', BINDKEY(this.accept, this),
                 'ESC', BINDKEY(this.cancel, this),
             ]);
             this._hotKeys.exclusive = true;
@@ -53,6 +54,8 @@ exports.Dialog = html.div('.dialog', {}, [
     },
 
     didShow: function() {
+        var win = this.query('.dialog-window', true);
+        setTimeout(function() { win.focus(); });
     },
 
     // ---------------------------------------------------------------------------------------------
