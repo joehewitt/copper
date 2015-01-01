@@ -11,7 +11,7 @@ exports.TabBar = html.div('.tab-bar', {onclick: '$onClick'}, [],
 
     tabselected: $.event,
     tabclosed: $.event,
-    
+
     // ---------------------------------------------------------------------------------------------
 
     get value() {
@@ -22,14 +22,22 @@ exports.TabBar = html.div('.tab-bar', {onclick: '$onClick'}, [],
         this._value = value;
 
         this.query('.tab.selected').removeClass('selected');
-        
+
         var selectedTab = this.query('.tab[value="' + value + '"]');
         if (selectedTab.length) {
             selectedTab.addClass('selected');
 
-            this.parent().query('.tab-page.selected').removeClass('selected');
+            var currentPage = this.parent().query('.tab-page.selected');
+            currentPage.removeClass('selected');
+            if (currentPage.hide) {
+                currentPage.hide();
+            }
+
             var newPage = this.parent().query('.tab-page[value="' + value + '"]');
             newPage.addClass('selected');
+            if (newPage.show) {
+                newPage.show();
+            }
 
             this.tabselected({tab: selectedTab, page: newPage});
         }
@@ -80,7 +88,7 @@ exports.TabBar = html.div('.tab-bar', {onclick: '$onClick'}, [],
     },
 
     // ---------------------------------------------------------------------------------------------
-    
+
     onClick: function(event) {
         var tab = $(event.target).closest('.tab');
         if (tab.length) {
@@ -96,9 +104,9 @@ exports.Tab = html.a('.tab', {type: 'replace'}, [],
     get selected() {
         return this.cssClass('selected');
     },
-        
+
     // ---------------------------------------------------------------------------------------------
-    
+
     select: function() {
         this.parent().value = this.attr('value');
     }
