@@ -68,7 +68,17 @@ exports.Dropdown = Button('.dropdown', {menu: 'self', onopeningmenu: '$onMenuOpe
 
     onMenuOpening: function(event) {
         this._commanded = _.bind(this.onMenuCommanded, this);
+
+        var fontSize = this.style('fontSize');
+
         var menu = event.detail.menu;
+
+        menu.query('.menu-item.checked').removeClass('checked');
+
+        var item = menu.query('.menu-item[value="' + escapeValue(this._value) + '"]');
+        item.addClass('checked');
+
+        menu.css('fontSize', fontSize);
         menu.listen('commanded', this._commanded);
     },
 
