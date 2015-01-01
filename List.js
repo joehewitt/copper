@@ -219,8 +219,8 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
     // ---------------------------------------------------------------------------------------------
 
     onClick: function(event) {
-        var item = $(event.target).closest('.list-item');
-        if (item.length) {
+        var item = $(event.target).contained('list-item');
+        if (item) {
             if (this.selectMode == 'click') {
                 if (event.detail == 2) {
                     this.enterItem(item);
@@ -234,20 +234,21 @@ exports.List = html.div('.list', {onmouseover: '$onMouseOver', onmouseout: '$onM
 
     onMouseDown: function(event) {
         if (this.selectMode == 'click') {
-            var item = $(event.target).closest('.list-item');
-            this.select(item.length ? item : null);
+            var item = $(event.target).contained('list-item');
+            this.select(item);
         }
     },
 
     onMouseOver: function(event) {
         if (this.selectMode == 'hover') {
-            var item = $(event.target).closest('.list-item');
-            this.select(item.length ? item : null);
+            var item = $(event.target).contained('list-item');
+            this.select(item);
         }
     },
 
     onMouseOut: function(event) {
-        if (!$(event.toElement).closest('.list').equals(this)) {
+        var list = $(event.toElement).contained('list');
+        if (!list || !list.equals(this)) {
             if (this.selectMode == 'hover') {
                 this.select(null);
             }

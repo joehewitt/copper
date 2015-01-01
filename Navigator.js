@@ -211,7 +211,7 @@ exports.Navigator = html.div('.navigator', {}, [
     // ---------------------------------------------------------------------------------------------
 
     onClickHeader: function(event) {
-        if ($(event.target).closest('.back-button').length) {
+        if ($(event.target).contained('back-button')) {
             this.popPage();
         }
     },

@@ -134,8 +134,8 @@ exports.SearchMenu = Menu('.search-menu', {onshowing: '$onMenuShowing',
     },
 
     onDragStart: function(event) {
-        var item = $(event.target).closest('.list-item');
-        var command = item.cmd();
+        var item = $(event.target).contained('list-item');
+        var command = item ? item.cmd() : null;
         if (command && command.hasDrag) {
             if (command.drag(event.dataTransfer)) {
                 event.dataTransfer.setDragImage(item.nodes[0], 0, 0);

@@ -90,8 +90,8 @@ exports.TabBar = html.div('.tab-bar', {onclick: '$onClick'}, [],
     // ---------------------------------------------------------------------------------------------
 
     onClick: function(event) {
-        var tab = $(event.target).closest('.tab');
-        if (tab.length) {
+        var tab = $(event.target).contained('tab');
+        if (tab) {
             this.value = tab.attr('value');
         }
     },

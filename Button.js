@@ -51,8 +51,8 @@ exports.Button = html.div('.button', {}, [
             } else {
                 var menu = this.query(menuSelector, true);
                 if (!menu.length) {
-                    var container = this.closest('.container');
-                    if (!container.length) {
+                    var container = this.contained('container');
+                    if (!container) {
                         container = $(document);
                     }
                     menu = container.query(menuSelector, true);

@@ -77,15 +77,15 @@ exports.Tree = html.div('.tree', {onmousedown: '$onMouseDown'}, [
     // ---------------------------------------------------------------------------------------------
 
     onMouseDown: function(event) {
-        var item = $(event.target).closest('.tree-item');
+        var item = $(event.target).contained('tree-item');
         if (event.metaKey && !event.shiftKey && !event.altKey && !event.ctrlKey) {
             this.toggleItem(item);
             event.preventDefault();
         } else if (event.shiftKey && !event.metaKey && !event.altKey && !event.ctrlKey) {
             this.toggleItemRange(item);
             event.preventDefault();
-        } else if (!item.cssClass('selected')) {
-            if (item.length || this.shouldUnselectBackground) {
+        } else if (item && !item.cssClass('selected')) {
+            if (item || this.shouldUnselectBackground) {
                 this.selectItem(item);
             }
         }

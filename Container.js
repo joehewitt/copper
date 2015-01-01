@@ -12,8 +12,8 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
 {
     onMouseDown: function(event) {
         if (event.button == 0) {
-            var button = $(event.target).closest('.button');
-            if (button.length && !button.cssClass('disabled')) {
+            var button = $(event.target).contained('button');
+            if (button && !button.cssClass('disabled')) {
                 if (button.attr('menu')) {
                     if (this.showingMenu = button.showMenu()) {
                         event.preventDefault();
@@ -25,20 +25,23 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
     },
 
     onMouseUp: function(event) {
-        if (this.showingMenu && $(event.target).closest('.menu').equals(this.showingMenu)) {
-            this.showingMenu.enter();
+        if (this.showingMenu) {
+            var menu = $(event.target).contained('menu');
+            if (menu && menu.equals(this.showingMenu)) {
+                this.showingMenu.enter();
+            }
         }
         this.showingMenu = null;
     },
 
     onClick: function(event) {
-        var button = $(event.target).closest('.button');
-        if (button.length && !button.cssClass('disabled')) {
+        var button = $(event.target).contained('button');
+        if (button && !button.cssClass('disabled')) {
             if (button.cssClass('checkbox')) {
                 button.selected = !button.selected;
             } else {
-                var group = button.closest('.button-group');
-                if (group.length) {
+                var group = button.contained('button-group');
+                if (group) {
                     var value = button.value;
                     group.value = value;
                     group.updated({target: group, value: value});

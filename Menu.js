@@ -80,7 +80,7 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
             anchorY = offset.top - height;
         }
 
-        var container = anchorBox.closest('.container');
+        var container = anchorBox.contained('container');
         return this.showAt(anchorX, anchorY, container, true);
     },
 
@@ -114,14 +114,16 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
 
         if (!this.onMouseDown) {
             this.onMouseDown = _.bind(function(event) {
-                if (!$(event.target).closest('.menu').equals(this)) {
+                var menu = $(event.target).contained('menu');
+                if (!menu || !menu.equals(this)) {
                     event.stopPropagation();
                     this.hide();
                 }
                 // event.preventDefault();
             }, this);
             this.onMouseMove = _.bind(function(event) {
-                if (!$(event.target).closest('.menu').equals(this)) {
+                var menu = $(event.target).contained('menu');
+                if (!menu || !menu.equals(this)) {
                     event.stopPropagation();
                     event.preventDefault();
                 }
