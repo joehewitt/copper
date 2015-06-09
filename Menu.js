@@ -333,7 +333,8 @@ exports.MenuSliderItem = html.div('.menu-slider-item', {}, [
         this.updated(slider.value);
     },
 
-    onNumberUpdated: function(input) {
+    onNumberUpdated: function(event) {
+        var input = event.target;
         this.query('.menu-item-slider').value = input.value;
         this.updated(input.value);
     }

@@ -56,7 +56,8 @@ exports.Input = html.input('.input', {oninput: '$onInput',}, [
     // ---------------------------------------------------------------------------------------------
 
     onInput: function(event) {
-        this.updated(this);
+        var evt = {target: this, value: this.value};
+        this.updated(evt);
     },
 });
 
@@ -136,8 +137,14 @@ exports.NumericInput = exports.Input('.numeric-input', {onmousedown: '$onMouseDo
             if (this.max !== undefined) {
                 value = Math.min(value, this.max);
             }
+            var previousValue = this.value;
             this.value = value;
-            this.updated(this);
+
+            var evt = {target: this, value: value};
+            this.updated(evt);
+            if (evt.preventDefault) {
+                this.value = previousValue;
+            }
         }
     },
 
@@ -148,6 +155,7 @@ exports.NumericInput = exports.Input('.numeric-input', {onmousedown: '$onMouseDo
             var startY = event.clientY;
             var startValue = this.value;
             var increment = -this.increment / this.pixelsPerIncrement;
+            var previousValue = this.value;
 
             event.preventDefault();
 
@@ -156,9 +164,15 @@ exports.NumericInput = exports.Input('.numeric-input', {onmousedown: '$onMouseDo
                 var diff = dy * increment;
                 diff -= diff % this.increment;
 
-                var newValue = startValue + diff;
-                this.value = this.formatValue(newValue);
-                this.updated(this);
+                var newValue = this.formatValue(startValue + diff);
+                this.value = newValue;
+                var evt = {target: this, value: newValue};
+                this.updated(evt);
+                if (evt.preventDefault) {
+                    this.value = previousValue;
+                } else {
+                    previousValue = newValue;
+                }
             }, this);
 
             this.onMouseUp = _.bind(function(event) {
