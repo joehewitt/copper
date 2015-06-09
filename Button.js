@@ -14,6 +14,15 @@ exports.Button = html.div('.button', {}, [
 
     // ---------------------------------------------------------------------------------------------
 
+    get group() {
+        return this.attr('group');
+    },
+
+    set group(group) {
+        this.attr('group', group);
+        this.selected = group == this.attr('value');
+    },
+
     get selected() {
         return this.cssClass('selected');
     },

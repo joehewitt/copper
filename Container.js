@@ -39,6 +39,8 @@ exports.Container = html.div('.container', {onmousedown: '$onMouseDown', onclick
         if (button && !button.cssClass('disabled')) {
             if (button.cssClass('checkbox')) {
                 button.selected = !button.selected;
+            } else if (button.cssClass('radio')) {
+                button.group = button.attr('value');
             } else {
                 var group = button.contained('button-group');
                 if (group) {
