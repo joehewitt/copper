@@ -194,6 +194,10 @@ exports.Menu = Navigator('.menu', {onnavigating: '$onNavigating', oncommanded: '
                 page.query('.menu-item').each(_.bind(function(item) {
                     var command = item.cmd();
                     if (command) {
+                        if (command.condition) {
+                            var enabled = command.condition.check();
+                            item.cssClass('disabled', !enabled);
+                        }
                         item.html(command.title);
 
                         if (item.cssClass('checkbox')) {
