@@ -21,13 +21,15 @@ exports.Tree = html.div('.tree', {onmousedown: '$onMouseDown'}, [
         if (this.selectedItems) {
             this.selectedItems.removeClass('selected');
         }
-        var event = {item: item, others: others};
-        var items = others && others.length
+
+        var items = others && others.length && item
             ? $([item].concat(others))
             : $(item);
 
         this.selectedItems = items;
         items.addClass('selected');
+
+        var event = {item: item, others: others};
         this.selectitem(event);
     },
 
@@ -84,7 +86,7 @@ exports.Tree = html.div('.tree', {onmousedown: '$onMouseDown'}, [
         } else if (event.shiftKey && !event.metaKey && !event.altKey && !event.ctrlKey) {
             this.toggleItemRange(item);
             event.preventDefault();
-        } else if (item && !item.cssClass('selected')) {
+        } else if (!item || !item.cssClass('selected')) {
             if (item || this.shouldUnselectBackground) {
                 this.selectItem(item);
             }
