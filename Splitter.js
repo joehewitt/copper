@@ -77,13 +77,14 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
     autoOrient: function() {
         if (this._oriented) return;
 
-        this.addClass(this.orientation);
-        
+        var orientation = this.orientation || 'row';
+        this.addClass(orientation);
+
         var previous = this.getPreviousBox();
         var next = this.getNextBox();
 
         if (this.target != 'flexible-siblings' && this.target != 'panels') {
-            if (this.orientation == 'column') {
+            if (orientation == 'column') {
                 // Convert bottom into top+height
                 if (previous) {
                     // previous.css('top', previous.position().top);
@@ -95,7 +96,7 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
                     next.css('height', next.height());
                     // next.css('bottom', 'auto');
                 }
-            } else if (this.orientation == 'row') {
+            } else if (orientation == 'row') {
                 // Convert right into left+width
                 if (previous) {
                     previous.css('left', previous.position().left);
@@ -152,11 +153,11 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
 
             if (target == 'parent') {
                 startNextSize = next.height();
-                startNextPos = next.position().top;            
+                startNextPos = next.position().top;
             } else {
                 startPrevSize = previous.height();
                 startNextSize = next.height();
-                startNextPos = next.position().top;            
+                startNextPos = next.position().top;
             }
         }
 
@@ -188,13 +189,19 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
                 }
                 delta -= deltaChange;
                 nextSize -= deltaChange;
-                prevSize -= deltaChange; 
+                prevSize -= deltaChange;
 
                 prevFlex = (prevSize/startPrevSize) * startPrevFlex;
                 nextFlex = (nextSize/startNextSize) * startNextFlex;
                 previous.css('-webkit-flex', prevFlex);
                 next.css('-webkit-flex', nextFlex);
 
+                if (previous.onResize) {
+                    previous.onResize();
+                }
+                if (next.onResize) {
+                    next.onResize();
+                }
                 this.resized({target: this, delta: this.delta});
             }, this);
 
@@ -275,4 +282,4 @@ exports.Splitter = html.div('.splitter', {onmousedown: '$onMouseDown'}, [
             $(window).listen('mouseup', onMouseEnd);
         }
     }
-});    
+});
