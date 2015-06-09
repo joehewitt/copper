@@ -159,6 +159,7 @@ exports.KeyManager.prototype = {
         var keyMaps = this._activeKeyMaps;
         for (var i = 0, l = keyMaps.length; i < l; ++i) {
             var keyMap = keyMaps[i];
+            keyMap._releaseActiveSequence();
             if (keyMap.processSequenceKey(null, this.keysDown, true)) {
                 break;
             }
@@ -341,6 +342,8 @@ exports.KeyMap.prototype = {
     },
 
     processSequenceKey: function(event, keyCodes, forceDefault) {
+        if (this.isDispatching) return;
+
         var map = this.sequenceMap;
         for (var i = 0, l = keyCodes.length; i < l; ++i) {
             var keyCode = keyCodes[i];
@@ -357,9 +360,7 @@ exports.KeyMap.prototype = {
         var matchedDefault = map == this.sequenceMap;
 
         if (map && map != this.activeSequence) {
-            if (this.activeSequence && this.activeSequence.bindings) {
-                _.each(this.activeSequence.bindings, function(fn) { fn(false); });
-            }
+            this._releaseActiveSequence();
 
             this.activeSequence = map;
 
@@ -371,12 +372,24 @@ exports.KeyMap.prototype = {
 
                 this.modeKeysDown = !matchedDefault;
 
+                this.isDispatching = true;
                 _.each(map.bindings, function(fn) {
                     fn(true);
                 });
+                this.isDispatching = false;
+
                 return !matchedDefault;
             }
         }
+    },
+
+    _releaseActiveSequence: function() {
+        if (this.isDispatching) return;
+
+        if (this.activeSequence && this.activeSequence.bindings) {
+            _.each(this.activeSequence.bindings, function(fn) { fn(false); });
+        }
+        this.activeSequence = null;
     },
 
     processComboKey: function(event, keyCode, shift, meta, alt, ctrl, up) {
